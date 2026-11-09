@@ -188,9 +188,24 @@
         };
         mainImg.addEventListener('error', fallbackProductImage);
         const colorName = document.getElementById('color-name');
+        product.colors.forEach(function (color) {
+          new Image().src = productImage(product, color);
+        });
         form.querySelectorAll('input[name="color"]').forEach(function (radio) {
           radio.addEventListener('change', function () {
             if (colorName) colorName.textContent = radio.value;
+            mainImg.classList.add('swapping');
+            const next = new Image();
+            next.onload = function () {
+              mainImg.src = next.src;
+              mainImg.alt = product.name + ' - ' + radio.value;
+              mainImg.classList.remove('swapping');
+            };
+            next.onerror = function () {
+              mainImg.src = mainImg.dataset.fallbackSrc;
+              mainImg.classList.remove('swapping');
+            };
+            next.src = productImage(product, radio.value);
           });
         });
         form.addEventListener('submit', function (e) {

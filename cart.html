@@ -47,7 +47,7 @@
         <tr>
           <td>
             <div class="cart-item-info">
-              <img src="${productImage(p, item.color)}"${productImgClass(p)} alt="${escapeHtml(p.name)} - ${escapeHtml(item.color)}">
+              <img src="${productImage(p, item.color)}" data-fallback-src="${escapeHtml(productBaseImage(p))}"${productImgClass(p)} alt="${escapeHtml(p.name)} - ${escapeHtml(item.color)}">
               <a href="product.html?id=${p.id}">${escapeHtml(p.name)}</a>
             </div>
           </td>
@@ -81,6 +81,7 @@
         <a href="checkout.html" class="btn btn-block" style="margin-top:16px; text-align:center;">Proceed to Checkout</a>
         <a href="shop.html" class="btn btn-secondary btn-block" style="margin-top:10px; text-align:center;">Continue Shopping</a>
       </div>`;
+    bindProductImageFallbacks(el);
 
     function showError(msg) {
       const e = document.getElementById('cart-error');

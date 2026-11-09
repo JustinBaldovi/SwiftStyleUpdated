@@ -23,10 +23,21 @@ const COLOR_HEX = {
 function productColorHex(product, color) {
   return COLOR_HEX[color] || '#cccccc';
 }
-/* Use one product photo; the selected color is represented by its exact hex swatch. */
-function productImage(p) {
+function colorSlug(color) {
+  return String(color).toLowerCase().trim().replace(/\s+/g, '-');
+}
+/* Color photos use assets/img/variants/<product-photo>-<color>.webp when available. */
+function productImage(p, color) {
   if (!p.image) return IMG_PLACEHOLDER;
+  if (color && p.colorImages && p.colorImages[color]) return p.colorImages[color];
   if (/^https?:\/\//i.test(p.image) || p.image.indexOf('product-images/') === 0) return p.image;
+  if (p.colors && p.colors.length) {
+    const selectedColor = color || p.colors[0];
+    if (selectedColor) {
+      const stem = p.image.replace(/\.[a-z0-9]+$/i, '');
+      return 'assets/img/variants/' + stem + '-' + colorSlug(selectedColor) + '.webp';
+    }
+  }
   return 'assets/img/' + p.image;
 }
 function productBaseImage(p) {
@@ -427,7 +438,10 @@ function renderProductGrid(containerId, products) {
   el.innerHTML = products.length
     ? products.map(productCardHTML).join('')
     : '<p class="empty-state">No bags found.</p>';
-  el.querySelectorAll('img[data-fallback-src]').forEach(function (image) {
+  bindProductImageFallbacks(el);
+}
+function bindProductImageFallbacks(root) {
+  root.querySelectorAll('img[data-fallback-src]').forEach(function (image) {
     var fallbackImage = function () {
       image.removeEventListener('error', fallbackImage);
       if (image.src !== new URL(image.dataset.fallbackSrc, document.baseURI).href) {

@@ -161,6 +161,10 @@
       price: Number(r.price), colors: r.colors || [], stock: r.stock,
       image: r.image && (r.image.indexOf('product-images/') === 0 || /^https?:\/\//i.test(r.image))
         ? productImageUrl(r.image) : r.image,
+      colorImages: Object.keys(r.color_images || {}).reduce(function (images, color) {
+        images[color] = productImageUrl(r.color_images[color]);
+        return images;
+      }, {}),
       fit: r.image_fit === 'contain' ? 'contain' : undefined,
       featured: r.is_featured, isNew: r.is_new
     };
