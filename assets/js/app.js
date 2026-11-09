@@ -285,12 +285,19 @@ function renderHeader() {
       </nav>
       <div class="nav-actions">
         <a href="cart.html" class="cart-link">🛒 Cart<span class="cart-badge">${count}</span></a>
-        ${user
-          ? `<span class="hello-user">Hi, ${escapeHtml((user.fullName || '').split(' ')[0])}</span>
-             <a href="#" class="btn-small btn-outline" id="logout-link">Log Out</a>`
-          : `<a href="login.html" class="btn-small btn-outline">Log In</a>
-             <a href="register.html" class="btn-small">Sign Up</a>`
-        }
+        <div class="profile-menu">
+          <button type="button" class="profile-trigger" id="profile-trigger" aria-expanded="false"
+            aria-controls="profile-dropdown" aria-haspopup="true"
+            aria-label="Profile menu for ${escapeHtml(user.fullName || 'your account')}">
+            <span class="profile-avatar" aria-hidden="true">${escapeHtml((user.fullName || 'U').trim().charAt(0).toUpperCase())}</span>
+            <span class="profile-trigger-label">Hi, ${escapeHtml((user.fullName || '').trim().split(/\s+/)[0] || 'there')}</span>
+            <span class="profile-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="profile-dropdown" id="profile-dropdown" hidden>
+            <span class="profile-dropdown-name">${escapeHtml(user.fullName || 'Your account')}</span>
+            <button type="button" id="logout-link" class="profile-logout">Log out</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>`;
@@ -298,11 +305,61 @@ function renderHeader() {
   const badge = el.querySelector('.cart-badge');
   if (badge) SSPH_DB.cartCount().then(function (n) { badge.textContent = n; });
 
+  const profileTrigger = el.querySelector('#profile-trigger');
+  const profileDropdown = el.querySelector('#profile-dropdown');
+  if (profileTrigger && profileDropdown) {
+    function setProfileMenuOpen(open) {
+      profileDropdown.hidden = !open;
+      profileTrigger.setAttribute('aria-expanded', String(open));
+      profileTrigger.classList.toggle('is-open', open);
+    }
+    if (el._profileMenuOutside) document.removeEventListener('click', el._profileMenuOutside);
+    if (el._profileMenuKeydown) document.removeEventListener('keydown', el._profileMenuKeydown);
+    profileTrigger.addEventListener('click', function () {
+      setProfileMenuOpen(profileDropdown.hidden);
+    });
+    el._profileMenuOutside = function (event) {
+      if (!el.contains(event.target)) setProfileMenuOpen(false);
+    };
+    el._profileMenuKeydown = function (event) {
+      if (event.key === 'Escape' && !profileDropdown.hidden) {
+        setProfileMenuOpen(false);
+        profileTrigger.focus();
+      }
+    };
+    document.addEventListener('click', el._profileMenuOutside);
+    document.addEventListener('keydown', el._profileMenuKeydown);
+    const header = el.querySelector('.site-header');
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (header && !motionPreference.matches) {
+      header.addEventListener('pointermove', function (event) {
+        const bounds = header.getBoundingClientRect();
+        header.style.setProperty('--pointer-x', ((event.clientX - bounds.left) / bounds.width * 100) + '%');
+        header.style.setProperty('--pointer-y', ((event.clientY - bounds.top) / bounds.height * 100) + '%');
+        header.style.setProperty('--parallax-x', ((event.clientX - bounds.left - bounds.width / 2) / bounds.width * -10) + 'px');
+        header.style.setProperty('--parallax-y', ((event.clientY - bounds.top - bounds.height / 2) / bounds.height * -5) + 'px');
+      });
+      header.addEventListener('pointerleave', function () {
+        header.style.setProperty('--pointer-x', '50%');
+        header.style.setProperty('--pointer-y', '50%');
+        header.style.setProperty('--parallax-x', '0px');
+        header.style.setProperty('--parallax-y', '0px');
+      });
+    }
+  }
+
   const logoutLink = document.getElementById('logout-link');
   if (logoutLink) {
-    logoutLink.addEventListener('click', async function (e) {
-      e.preventDefault();
-      await SSPH_DB.signOut();
+    logoutLink.addEventListener('click', async function () {
+      logoutLink.disabled = true;
+      logoutLink.textContent = 'Signing out…';
+      const result = await SSPH_DB.signOut();
+      if (!result.ok) {
+        console.error('[Auth] Could not sign out:', result.error);
+        logoutLink.disabled = false;
+        logoutLink.textContent = 'Log out';
+        return;
+      }
       window.location.href = 'login.html';
     });
   }
