@@ -37,10 +37,12 @@
 <script src="assets/js/data.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
-  appReady(function () {
+  function renderHomeProducts() {
     renderProductGrid('featured-grid', PRODUCTS.filter(p => p.featured));
     renderProductGrid('new-grid', PRODUCTS.filter(p => p.isNew));
-  });
+  }
+  appReady(renderHomeProducts);
+  window.addEventListener('ssph:catalog-updated', renderHomeProducts);
 </script>
 </body>
 </html>

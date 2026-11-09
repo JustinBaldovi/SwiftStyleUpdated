@@ -23,7 +23,7 @@
 <script src="assets/js/data.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
-  appReady(function () {
+  appReady(async function () {
     const productId = Number(qs('id'));
     const product = getProductById(productId);
     const section = document.getElementById('product-section');
@@ -38,25 +38,25 @@
       section.innerHTML = `
         <div class="product-detail">
           <div class="product-detail-img">
-            <img id="product-main-img" src="${productImage(product)}"${productImgClass(product)} alt="${product.name}">
+            <img id="product-main-img" src="${escapeHtml(productImage(product))}"${productImgClass(product)} alt="${escapeHtml(product.name)}">
           </div>
           <div>
             ${product.isNew ? '<span class="product-badge">NEW</span>' : ''}
-            <h1>${product.name}</h1>
+            <h1>${escapeHtml(product.name)}</h1>
             <div class="price">${formatPrice(product.price)}</div>
-            <p class="desc">${product.description}</p>
+            <p class="desc">${escapeHtml(product.description)}</p>
   
             ${product.stock > 0 ? `
               <p class="stock-note">In stock: ${product.stock} available</p>
               <form id="add-to-cart-form">
                 ${product.colors.length ? `
                 <div class="option-group">
-                  <label>Color: <b id="color-name">${product.colors[0]}</b></label>
+                  <label>Color: <b id="color-name">${escapeHtml(product.colors[0])}</b></label>
                   <div class="color-options">
                     ${product.colors.map((c, i) => `
                       <label>
-                        <input type="radio" name="color" value="${c}" ${i === 0 ? 'checked' : ''}>
-                        <span><i class="swatch" style="background:${COLOR_HEX[c] || '#ccc'}"></i>${c}</span>
+                        <input type="radio" name="color" value="${escapeHtml(c)}" ${i === 0 ? 'checked' : ''}>
+                        <span><i class="swatch" style="background:${COLOR_HEX[c] || '#ccc'}"></i>${escapeHtml(c)}</span>
                       </label>`).join('')}
                   </div>
                 </div>` : ''}
@@ -80,7 +80,101 @@
       if (related.length) {
         renderProductGrid('related-grid', related);
       }
-  
+
+      section.insertAdjacentHTML('beforeend', `
+        <section class="product-reviews" aria-labelledby="reviews-title">
+          <div class="product-reviews-heading">
+            <div><h2 id="reviews-title">Customer reviews</h2><p id="reviews-summary">Loading reviews…</p></div>
+          </div>
+          <form id="review-form" class="review-form">
+            <h3>Share your feedback</h3>
+            <label for="review-rating">Your rating</label>
+            <select id="review-rating" required>
+              <option value="5">5 stars — Excellent</option>
+              <option value="4">4 stars — Very good</option>
+              <option value="3">3 stars — Good</option>
+              <option value="2">2 stars — Fair</option>
+              <option value="1">1 star — Poor</option>
+            </select>
+            <label for="review-comment">Comment</label>
+            <textarea id="review-comment" rows="4" maxlength="2000" required placeholder="Tell other shoppers about this bag"></textarea>
+            <div class="review-form-actions">
+              <button type="submit" class="btn" id="submit-review">Submit review</button>
+              <span id="review-message" role="status" aria-live="polite"></span>
+            </div>
+            <small>You can update your review for this product by submitting again.</small>
+          </form>
+          <div id="product-review-list" class="product-review-list"></div>
+        </section>
+      `);
+
+      async function refreshReviews() {
+        const result = await SSPH_DB.listProductReviews(product.id);
+        const list = document.getElementById('product-review-list');
+        const summary = document.getElementById('reviews-summary');
+        if (!result.ok) {
+          summary.textContent = 'Could not load reviews: ' + result.error;
+          list.replaceChildren();
+          return;
+        }
+        const reviews = result.data;
+        const average = reviews.length
+          ? (reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length).toFixed(1)
+          : '';
+        summary.textContent = reviews.length
+          ? average + ' out of 5 stars · ' + reviews.length + (reviews.length === 1 ? ' review' : ' reviews')
+          : 'No reviews yet. Be the first to share your feedback.';
+        list.innerHTML = reviews.map(function (review) {
+          return '<article class="product-review">' +
+            '<div class="product-review-meta"><span class="review-stars" aria-label="' + Number(review.rating) +
+              ' out of 5 stars">' + '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating)) +
+              '</span><time>' + escapeHtml(new Date(review.created_at).toLocaleDateString()) + '</time></div>' +
+            '<p>' + escapeHtml(review.comment) + '</p></article>';
+        }).join('');
+      }
+
+      async function loadMyReview() {
+        const result = await SSPH_DB.getMyProductReview(product.id);
+        if (!result.ok) {
+          const message = document.getElementById('review-message');
+          message.textContent = 'Could not load your existing review: ' + result.error;
+          message.className = 'error';
+          return;
+        }
+        if (!result.data) return;
+        document.getElementById('review-rating').value = String(result.data.rating);
+        document.getElementById('review-comment').value = result.data.comment;
+        document.getElementById('submit-review').textContent = 'Update review';
+      }
+
+      document.getElementById('review-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const button = document.getElementById('submit-review');
+        const message = document.getElementById('review-message');
+        button.disabled = true;
+        message.textContent = 'Submitting…';
+        const result = await SSPH_DB.submitProductReview(
+          product.id,
+          document.getElementById('review-rating').value,
+          document.getElementById('review-comment').value
+        );
+        button.disabled = false;
+        if (!result.ok) {
+          message.textContent = result.error;
+          message.className = 'error';
+          return;
+        }
+        message.textContent = 'Thank you! Your review has been saved.';
+        message.className = 'success';
+        button.textContent = 'Update review';
+        await refreshReviews();
+      });
+
+      refreshReviews();
+      loadMyReview();
+      const reviewWatch = await SSPH_DB.watchProductReviews(product.id, refreshReviews);
+      if (!reviewWatch.ok) console.error('[Reviews] Live updates unavailable:', reviewWatch.error);
+
       const form = document.getElementById('add-to-cart-form');
       if (form) {
         // Changing the colour swaps the bag photo to that colour
@@ -124,6 +218,9 @@
         });
       }
     }
+  });
+  window.addEventListener('ssph:catalog-updated', function () {
+    window.location.reload();
   });
 </script>
 </body>

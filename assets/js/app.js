@@ -28,6 +28,7 @@ function colorSlug(c) {
    With no colour given, the product's first listed colour is used. */
 function productImage(p, color) {
   if (!p.image) return IMG_PLACEHOLDER;
+  if (/^https?:\/\//i.test(p.image)) return p.image;
   if (!p.colors || !p.colors.length) return 'assets/img/' + p.image;   // single-photo product
   const c = color || p.colors[0];
   if (!c) return 'assets/img/' + p.image;
@@ -63,6 +64,19 @@ function appReady(fn) {
     await SSPH_DB.getProfile();           // refresh the name shown in the header
     renderHeader();
     fn();
+    var watch = await SSPH_DB.watchCatalog(async function () {
+      var update = await SSPH_DB.loadCatalog();
+      if (!update.ok) {
+        console.error('[Catalog] Could not refresh products:', update.error);
+        return;
+      }
+      window.dispatchEvent(new CustomEvent('ssph:catalog-updated'));
+    }, function (status, error) {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('[Catalog] Live updates disconnected:', error || status);
+      }
+    });
+    if (!watch.ok) console.error('[Catalog] Live updates unavailable:', watch.error);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
 }
@@ -333,12 +347,13 @@ function productCardHTML(p) {
   return `
   <div class="product-card">
     <a href="product.html?id=${p.id}">
-      <div class="product-thumb"><img src="${productImage(p)}"${productImgClass(p)} alt="${p.name}"></div>
+      <div class="product-thumb"><img src="${escapeHtml(productImage(p))}"${productImgClass(p)} alt="${escapeHtml(p.name)}"></div>
     </a>
     <div class="product-info">
       ${p.isNew ? '<span class="product-badge">NEW</span>' : ''}
-      <h3><a href="product.html?id=${p.id}">${p.name}</a></h3>
+      <h3><a href="product.html?id=${p.id}">${escapeHtml(p.name)}</a></h3>
       <div class="product-price">${formatPrice(p.price)}</div>
+      ${Number(p.stock) > 0 ? '<small class="product-stock">' + Number(p.stock) + ' in stock</small>' : '<small class="product-stock out-of-stock">Out of stock</small>'}
       <div class="product-actions">
         <a href="product.html?id=${p.id}" class="btn btn-secondary btn-block">View Product</a>
       </div>

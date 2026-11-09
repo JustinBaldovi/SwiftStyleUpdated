@@ -97,6 +97,7 @@
       }
   
       document.getElementById('sort-select').addEventListener('change', applySort);
+      window.addEventListener('ssph:catalog-updated', applySort);
       applySort();
     }
   });

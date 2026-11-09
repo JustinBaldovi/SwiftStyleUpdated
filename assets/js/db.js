@@ -159,9 +159,19 @@
       id: r.product_id, categoryId: r.category_id, gender: r.gender,
       name: r.product_name, description: r.description || '',
       price: Number(r.price), colors: r.colors || [], stock: r.stock,
-      image: r.image, fit: r.image_fit === 'contain' ? 'contain' : undefined,
+      image: r.image && (r.image.indexOf('product-images/') === 0 || /^https?:\/\//i.test(r.image))
+        ? productImageUrl(r.image) : r.image,
+      fit: r.image_fit === 'contain' ? 'contain' : undefined,
       featured: r.is_featured, isNew: r.is_new
     };
+  }
+  function productImageUrl(image) {
+    if (!image) return '';
+    if (/^https?:\/\//i.test(image)) return image;
+    if (image.indexOf('product-images/') === 0) {
+      return sb.storage.from('product-images').getPublicUrl(image.slice('product-images/'.length)).data.publicUrl;
+    }
+    return 'assets/img/' + image.replace(/^\/+/, '');
   }
   function mapCategory(r) { return { id: r.category_id, name: r.category_name, slug: r.slug }; }
 
@@ -177,6 +187,16 @@
     if (typeof CATEGORIES !== 'undefined') { CATEGORIES.length = 0; Array.prototype.push.apply(CATEGORIES, cats); }
     if (typeof PRODUCTS   !== 'undefined') { PRODUCTS.length = 0;   Array.prototype.push.apply(PRODUCTS, prods); }
     return ok({ categories: cats, products: prods });
+  }
+  async function watchCatalog(onChange, onStatus) {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Not signed in.');
+    var channel = sb.channel('catalog-' + session.data.session.user.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, onChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, onChange)
+      .subscribe(onStatus);
+    return ok(channel);
   }
 
   /* ---------------------------------------------------------------
@@ -300,34 +320,142 @@
     var r = await sb.from('products').select('*, categories(category_name)').order('created_at', { ascending: false });
     return r.error ? fail(r.error) : ok(r.data);
   }
+  async function adminListCategories() {
+    var r = await sb.from('categories').select('category_id, category_name').order('category_name');
+    return r.error ? fail(r.error) : ok(r.data);
+  }
   /* p uses the same field names as the admin form / PRODUCTS shape. Pass p.id to update, omit to insert. */
   async function adminSaveProduct(p) {
+    var price = Number(p.price), stock = Number(p.stock), categoryId = Number(p.categoryId);
+    if (!String(p.name || '').trim()) return fail('Enter a product name.');
+    if (!categoryId || !Number.isInteger(categoryId)) return fail('Choose a product category.');
+    if (!Number.isFinite(price) || price < 0) return fail('Enter a valid product price.');
+    if (!Number.isInteger(stock) || stock < 0) return fail('Stock must be a whole number of zero or more.');
+    if (['Men', 'Women', 'Children'].indexOf(p.gender) < 0) return fail('Choose a valid product audience.');
+    if (String(p.description || '').length > 5000) return fail('Description must be 5,000 characters or fewer.');
     var row = {
-      category_id: p.categoryId, gender: p.gender, product_name: p.name, description: p.description || null,
-      price: p.price, colors: Array.isArray(p.colors) ? p.colors
+      category_id: categoryId, gender: p.gender, product_name: String(p.name).trim(), description: String(p.description || '').trim() || null,
+      price: price, colors: Array.isArray(p.colors) ? p.colors
         : String(p.colors || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean),
-      stock: p.stock, image: p.image || null, image_fit: p.fit === 'contain' ? 'contain' : 'cover',
+      stock: stock, image: p.image || null, image_fit: p.fit === 'contain' ? 'contain' : 'cover',
       is_featured: !!p.featured, is_new: !!p.isNew
     };
     var r = p.id
-      ? await sb.from('products').update(row).eq('product_id', p.id)
-      : await sb.from('products').insert(row);
-    return r.error ? fail(r.error) : ok(true);
+      ? await sb.from('products').update(row).eq('product_id', p.id).select('product_id').maybeSingle()
+      : await sb.from('products').insert(row).select('product_id').single();
+    if (r.error) return fail(r.error);
+    return r.data ? ok(r.data) : fail('Product was not found or you do not have permission to change it.');
   }
   async function adminDeleteProduct(productId) {
-    var r = await sb.from('products').delete().eq('product_id', productId);
-    return r.error ? fail(r.error) : ok(true);
+    if (!Number.isSafeInteger(Number(productId)) || Number(productId) < 1) return fail('Invalid product ID.');
+    var existing = await sb.from('products').select('image').eq('product_id', productId).maybeSingle();
+    if (existing.error) return fail(existing.error);
+    if (!existing.data) return fail('Product was not found or you do not have permission to delete it.');
+    var r = await sb.from('products').delete().eq('product_id', productId).select('product_id').maybeSingle();
+    if (r.error) return fail(r.error);
+    if (!r.data) return fail('Product was not found or you do not have permission to delete it.');
+    var image = existing.data.image || '';
+    if (image.indexOf('product-images/') === 0) {
+      var removed = await sb.storage.from('product-images').remove([image.slice('product-images/'.length)]);
+      if (removed.error) return ok({ warning: 'Product deleted, but its stored image could not be removed: ' + removed.error.message });
+    }
+    return ok({ warning: '' });
+  }
+  async function adminUploadProductImage(file) {
+    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      return fail('Choose a JPG, PNG, or WebP image.');
+    }
+    if (file.size > 5 * 1024 * 1024) return fail('Product images must be 5 MB or smaller.');
+    var extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type];
+    var id = window.crypto && window.crypto.randomUUID
+      ? window.crypto.randomUUID()
+      : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+    var path = id + '.' + extension;
+    var uploaded = await sb.storage.from('product-images').upload(path, file, {
+      cacheControl: '3600', contentType: file.type, upsert: false
+    });
+    if (uploaded.error) return fail(uploaded.error);
+    return ok('product-images/' + path);
+  }
+  async function adminRemoveProductImage(image) {
+    if (!image || image.indexOf('product-images/') !== 0) return ok(true);
+    var removed = await sb.storage.from('product-images').remove([image.slice('product-images/'.length)]);
+    return removed.error ? fail(removed.error) : ok(true);
+  }
+  async function listProductReviews(productId) {
+    var r = await sb.from('product_reviews')
+      .select('review_id, product_id, user_id, rating, comment, created_at')
+      .eq('product_id', productId).order('created_at', { ascending: false });
+    return r.error ? fail(r.error) : ok(r.data);
+  }
+  async function getMyProductReview(productId) {
+    var s = await sb.auth.getSession();
+    if (s.error) return fail(s.error);
+    if (!s.data.session) return fail('Please sign in to leave a review.');
+    var r = await sb.from('product_reviews').select('rating, comment')
+      .eq('product_id', productId).eq('user_id', s.data.session.user.id).maybeSingle();
+    return r.error ? fail(r.error) : ok(r.data);
+  }
+  async function submitProductReview(productId, rating, comment) {
+    var s = await sb.auth.getSession();
+    if (s.error) return fail(s.error);
+    if (!s.data.session) return fail('Please sign in to leave a review.');
+    rating = Number(rating);
+    comment = String(comment || '').trim();
+    if (!Number.isSafeInteger(Number(productId)) || Number(productId) < 1) return fail('Invalid product.');
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) return fail('Choose a rating from 1 to 5 stars.');
+    if (!comment || comment.length > 2000) return fail('Write a comment of 1 to 2,000 characters.');
+    var r = await sb.from('product_reviews').upsert({
+      product_id: Number(productId),
+      user_id: s.data.session.user.id,
+      rating: rating,
+      comment: comment
+    }, { onConflict: 'product_id,user_id' }).select('review_id').single();
+    return r.error ? fail(r.error) : ok(r.data);
+  }
+  async function adminListProductReviews(limit) {
+    var q = sb.from('product_reviews')
+      .select('review_id, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
+      .order('created_at', { ascending: false });
+    if (limit) q = q.limit(limit);
+    var r = await q;
+    return r.error ? fail(r.error) : ok(r.data);
+  }
+  async function watchProductReviews(productId, onChange, onStatus) {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Not signed in.');
+    var channel = sb.channel('reviews-product-' + productId + '-' + session.data.session.user.id)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'product_reviews', filter: 'product_id=eq.' + Number(productId)
+      }, onChange)
+      .subscribe(onStatus);
+    return ok(channel);
+  }
+  async function watchProductReviewsAdmin(onChange, onStatus) {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Not signed in.');
+    var channel = sb.channel('reviews-admin-' + session.data.session.user.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_reviews' }, onChange)
+      .subscribe(onStatus);
+    return ok(channel);
   }
 
   window.SSPH_DB = {
     client: sb, authEmailFor: authEmailFor,
     signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, updateProfile: updateProfile, requireSession: requireSession,
-    loadCatalog: loadCatalog,
+    loadCatalog: loadCatalog, watchCatalog: watchCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
     placeOrder: placeOrder, myOrders: myOrders, getOrder: getOrder, watchOrders: watchOrders,
     adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus, adminDeleteOrder: adminDeleteOrder,
     adminGetPaymentQr: adminGetPaymentQr, adminSavePaymentQr: adminSavePaymentQr,
-    adminListProducts: adminListProducts, adminSaveProduct: adminSaveProduct, adminDeleteProduct: adminDeleteProduct,
+    adminListProducts: adminListProducts, adminListCategories: adminListCategories,
+    adminSaveProduct: adminSaveProduct, adminDeleteProduct: adminDeleteProduct,
+    adminUploadProductImage: adminUploadProductImage, adminRemoveProductImage: adminRemoveProductImage,
+    productImageUrl: productImageUrl, listProductReviews: listProductReviews, getMyProductReview: getMyProductReview,
+    submitProductReview: submitProductReview, adminListProductReviews: adminListProductReviews,
+    watchProductReviews: watchProductReviews, watchProductReviewsAdmin: watchProductReviewsAdmin,
     PAYMENT_METHODS: PAYMENT_METHODS, ORDER_STATUSES: ORDER_STATUSES
   };
 })();

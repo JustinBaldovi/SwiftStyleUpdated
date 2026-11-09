@@ -20,7 +20,7 @@
     <div>
       <p class="owner-eyebrow">STORE MANAGEMENT</p>
       <h1>Owner Dashboard</h1>
-      <p>Track sales, manage customer orders, and update your store profile.</p>
+      <p>Track sales, manage orders and inventory, review customer feedback, and update your store profile.</p>
     </div>
     <button type="button" class="btn btn-secondary" id="refresh-dashboard">Refresh data</button>
   </div>
@@ -30,6 +30,8 @@
   <nav class="owner-tabs" aria-label="Owner dashboard sections">
     <button type="button" class="owner-tab active" data-panel="overview">Overview</button>
     <button type="button" class="owner-tab" data-panel="orders">Orders</button>
+    <button type="button" class="owner-tab" data-panel="inventory">Inventory</button>
+    <button type="button" class="owner-tab" data-panel="feedback">Feedback</button>
     <button type="button" class="owner-tab" data-panel="profile">Profile &amp; QR code</button>
   </nav>
 
@@ -67,6 +69,89 @@
         </table>
       </div>
       <p class="owner-empty" id="orders-empty" hidden>No orders have been placed yet.</p>
+    </div>
+  </section>
+
+  <section class="owner-panel" id="panel-inventory" hidden>
+    <form class="owner-card owner-form inventory-form" id="product-form">
+      <div>
+        <h2 id="product-form-title">Add a bag product</h2>
+        <p>New and updated products appear in the shop automatically. Set stock to zero to mark an item out of stock.</p>
+      </div>
+      <input id="product-id" type="hidden">
+      <div class="inventory-fields">
+        <div>
+          <label for="product-name">Product name</label>
+          <input id="product-name" type="text" required maxlength="160">
+        </div>
+        <div>
+          <label for="product-category">Category</label>
+          <select id="product-category" required></select>
+        </div>
+        <div>
+          <label for="product-gender">Audience</label>
+          <select id="product-gender" required>
+            <option value="Men">Men</option>
+            <option value="Women">Women</option>
+            <option value="Children">Children</option>
+          </select>
+        </div>
+        <div>
+          <label for="product-price">Price (₱)</label>
+          <input id="product-price" type="number" min="0" step="0.01" required>
+        </div>
+        <div>
+          <label for="product-stock">Quantity in stock</label>
+          <input id="product-stock" type="number" min="0" step="1" required value="0">
+        </div>
+        <div>
+          <label for="product-colors">Colors (comma separated)</label>
+          <input id="product-colors" type="text" maxlength="300" placeholder="Black, Brown">
+        </div>
+        <div class="inventory-image-field">
+          <label for="product-image">Product picture (JPG, PNG or WebP; up to 5 MB)</label>
+          <input id="product-image" type="file" accept="image/jpeg,image/png,image/webp">
+          <img id="product-image-preview" class="inventory-image-preview" alt="Product image preview" hidden>
+        </div>
+        <div class="inventory-description">
+          <label for="product-description">Description</label>
+          <textarea id="product-description" rows="4" maxlength="5000"></textarea>
+        </div>
+        <label class="inventory-check"><input id="product-featured" type="checkbox"> Featured product</label>
+        <label class="inventory-check"><input id="product-new" type="checkbox"> Mark as new arrival</label>
+      </div>
+      <div class="inventory-form-actions">
+        <button type="submit" class="btn" id="save-product">Add product</button>
+        <button type="button" class="btn btn-secondary" id="cancel-product-edit" hidden>Cancel edit</button>
+      </div>
+    </form>
+
+    <div class="owner-card">
+      <div class="owner-card-heading">
+        <div><h2>Store inventory</h2><p>Edit details or remove products from the storefront.</p></div>
+      </div>
+      <div class="owner-table-wrap">
+        <table class="owner-table inventory-table">
+          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+          <tbody id="inventory-products"></tbody>
+        </table>
+      </div>
+      <p class="owner-empty" id="inventory-empty" hidden>No products are in the catalog.</p>
+    </div>
+  </section>
+
+  <section class="owner-panel" id="panel-feedback" hidden>
+    <div class="owner-card">
+      <div class="owner-card-heading">
+        <div><h2>Customer feedback</h2><p>Ratings and comments submitted on product pages.</p></div>
+      </div>
+      <div class="owner-table-wrap">
+        <table class="owner-table feedback-table">
+          <thead><tr><th>Product</th><th>Rating</th><th>Customer</th><th>Comment</th><th>Date</th></tr></thead>
+          <tbody id="customer-feedback"></tbody>
+        </table>
+      </div>
+      <p class="owner-empty" id="feedback-empty" hidden>No customer feedback yet.</p>
     </div>
   </section>
 

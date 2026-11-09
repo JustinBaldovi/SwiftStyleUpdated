@@ -68,6 +68,111 @@
     }).join('');
   }
 
+  var inventoryProducts = [];
+  var currentProductImage = '';
+  var previewObjectUrl = '';
+
+  function renderInventory(products) {
+    inventoryProducts = products;
+    document.getElementById('inventory-empty').hidden = products.length > 0;
+    document.getElementById('inventory-products').innerHTML = products.map(function (product) {
+      var image = SSPH_DB.productImageUrl(product.image);
+      var stock = Number(product.stock);
+      return '<tr><td class="inventory-product-cell">' +
+        (image ? '<img class="inventory-row-image" src="' + escapeHtml(image) + '" alt="">' : '') +
+        '<span><strong>' + escapeHtml(product.product_name) + '</strong><small>' + escapeHtml(product.gender) + '</small></span></td>' +
+        '<td>' + escapeHtml(product.categories && product.categories.category_name || '—') + '</td>' +
+        '<td>' + formatPrice(product.price) + '</td>' +
+        '<td><span class="inventory-stock ' + (stock > 0 ? 'in-stock' : 'out-of-stock') + '">' +
+          (stock > 0 ? stock + ' in stock' : 'Out of stock') + '</span></td>' +
+        '<td><div class="inventory-actions"><button type="button" class="btn btn-small edit-product" data-product-id="' +
+          Number(product.product_id) + '">Edit</button><button type="button" class="btn btn-secondary btn-small delete-product" data-product-id="' +
+          Number(product.product_id) + '">Delete</button></div></td></tr>';
+    }).join('');
+  }
+
+  async function refreshInventory() {
+    var results = await Promise.all([SSPH_DB.adminListProducts(), SSPH_DB.adminListCategories()]);
+    var failed = results.find(function (result) { return !result.ok; });
+    if (failed) {
+      showNotice('Could not load inventory: ' + failed.error, true);
+      return;
+    }
+    var categorySelect = document.getElementById('product-category');
+    var selectedCategory = categorySelect.value;
+    categorySelect.innerHTML = results[1].data.map(function (category) {
+      return '<option value="' + Number(category.category_id) + '">' + escapeHtml(category.category_name) + '</option>';
+    }).join('');
+    if (selectedCategory) categorySelect.value = selectedCategory;
+    renderInventory(results[0].data);
+  }
+
+  function renderFeedback(reviews) {
+    document.getElementById('feedback-empty').hidden = reviews.length > 0;
+    document.getElementById('customer-feedback').innerHTML = reviews.map(function (review) {
+      var profile = review.profiles || {};
+      var product = review.products || {};
+      return '<tr><td><strong>' + escapeHtml(product.product_name || 'Deleted product') + '</strong></td>' +
+        '<td><span class="review-stars" aria-label="' + Number(review.rating) + ' out of 5 stars">' +
+          '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating)) +
+          '</span><small>' + Number(review.rating) + '/5</small></td>' +
+        '<td>' + escapeHtml(profile.full_name || profile.email || 'Customer') +
+          (profile.email ? '<small>' + escapeHtml(profile.email) + '</small>' : '') + '</td>' +
+        '<td class="feedback-comment">' + escapeHtml(review.comment) + '</td>' +
+        '<td>' + escapeHtml(dateLabel(review.created_at)) + '</td></tr>';
+    }).join('');
+  }
+
+  async function refreshFeedback() {
+    var result = await SSPH_DB.adminListProductReviews(200);
+    if (!result.ok) {
+      showNotice('Could not load customer feedback. Run supabase/10_inventory_reviews.sql. Details: ' + result.error, true);
+      return;
+    }
+    renderFeedback(result.data);
+  }
+
+  function resetProductForm() {
+    var form = document.getElementById('product-form');
+    form.reset();
+    document.getElementById('product-id').value = '';
+    document.getElementById('product-stock').value = '0';
+    document.getElementById('product-form-title').textContent = 'Add a bag product';
+    document.getElementById('save-product').textContent = 'Add product';
+    document.getElementById('cancel-product-edit').hidden = true;
+    currentProductImage = '';
+    var preview = document.getElementById('product-image-preview');
+    preview.hidden = true;
+    preview.removeAttribute('src');
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = '';
+  }
+
+  function beginProductEdit(product) {
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = '';
+    document.getElementById('product-id').value = product.product_id;
+    document.getElementById('product-name').value = product.product_name || '';
+    document.getElementById('product-category').value = product.category_id;
+    document.getElementById('product-gender').value = product.gender;
+    document.getElementById('product-price').value = product.price;
+    document.getElementById('product-stock').value = product.stock;
+    document.getElementById('product-colors').value = (product.colors || []).join(', ');
+    document.getElementById('product-description').value = product.description || '';
+    document.getElementById('product-featured').checked = !!product.is_featured;
+    document.getElementById('product-new').checked = !!product.is_new;
+    document.getElementById('product-image').value = '';
+    currentProductImage = product.image || '';
+    var preview = document.getElementById('product-image-preview');
+    var imageUrl = SSPH_DB.productImageUrl(currentProductImage);
+    preview.hidden = !imageUrl;
+    if (imageUrl) preview.src = imageUrl;
+    document.getElementById('product-form-title').textContent = 'Edit product';
+    document.getElementById('save-product').textContent = 'Save changes';
+    document.getElementById('cancel-product-edit').hidden = false;
+    document.getElementById('product-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   async function refreshDashboard(showLoading) {
     if (showLoading) showNotice('Refreshing dashboard…');
     var results = await Promise.all([SSPH_DB.adminStats(), SSPH_DB.adminListOrders(100)]);
@@ -150,7 +255,7 @@
       document.getElementById('qr-payload').value = qr.data;
       renderQr(qr.data);
     }
-    await refreshDashboard(false);
+    await Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
     if (!qr.ok) showNotice('Could not load the payment QR setting. Run supabase/04_owner_dashboard.sql.', true);
     var subscription = await SSPH_DB.watchOrders(true, scheduleRefresh, function (status, error) {
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -161,6 +266,20 @@
       }
     });
     if (!subscription.ok) showNotice('Live order updates unavailable: ' + subscription.error, true);
+    var reviewSubscription = await SSPH_DB.watchProductReviewsAdmin(refreshFeedback, function (status, error) {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        showNotice('Live customer feedback updates disconnected. ' + (error || ''), true);
+      }
+    });
+    if (!reviewSubscription.ok) showNotice('Live customer feedback updates unavailable: ' + reviewSubscription.error, true);
+    var catalogSubscription = await SSPH_DB.watchCatalog(function () {
+      Promise.all([refreshInventory(), refreshDashboard(false)]);
+    }, function (status, error) {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        showNotice('Live inventory updates disconnected. ' + (error || ''), true);
+      }
+    });
+    if (!catalogSubscription.ok) showNotice('Live inventory updates unavailable: ' + catalogSubscription.error, true);
   }
 
   document.querySelectorAll('.owner-tab').forEach(function (button) {
@@ -170,7 +289,105 @@
     button.addEventListener('click', function () { setPanel(button.dataset.openPanel); });
   });
   document.getElementById('refresh-dashboard').addEventListener('click', function () {
-    refreshDashboard(true);
+    showNotice('Refreshing dashboard…');
+    Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
+  });
+
+  document.getElementById('product-image').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    var preview = document.getElementById('product-image-preview');
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = '';
+    if (!file) {
+      var existingUrl = SSPH_DB.productImageUrl(currentProductImage);
+      preview.hidden = !existingUrl;
+      if (existingUrl) preview.src = existingUrl;
+      else preview.removeAttribute('src');
+      return;
+    }
+    previewObjectUrl = URL.createObjectURL(file);
+    preview.src = previewObjectUrl;
+    preview.hidden = false;
+  });
+
+  document.getElementById('cancel-product-edit').addEventListener('click', resetProductForm);
+  document.getElementById('inventory-products').addEventListener('click', async function (event) {
+    var editButton = event.target.closest('.edit-product');
+    var deleteButton = event.target.closest('.delete-product');
+    if (editButton) {
+      var selected = inventoryProducts.find(function (product) {
+        return product.product_id === Number(editButton.dataset.productId);
+      });
+      if (selected) beginProductEdit(selected);
+      return;
+    }
+    if (!deleteButton) return;
+    var product = inventoryProducts.find(function (item) {
+      return item.product_id === Number(deleteButton.dataset.productId);
+    });
+    if (!product || !window.confirm('Delete "' + product.product_name + '" from the store? This cannot be undone.')) return;
+    deleteButton.disabled = true;
+    var result = await SSPH_DB.adminDeleteProduct(product.product_id);
+    if (!result.ok) {
+      showNotice('Could not delete product: ' + result.error, true);
+    } else {
+      showNotice(result.data.warning || 'Product deleted from the store.', !!result.data.warning);
+      await Promise.all([refreshInventory(), refreshDashboard(false)]);
+    }
+    deleteButton.disabled = false;
+  });
+
+  document.getElementById('product-form').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    var submit = document.getElementById('save-product');
+    var productId = Number(document.getElementById('product-id').value) || null;
+    var file = document.getElementById('product-image').files[0];
+    var imagePath = currentProductImage;
+    var newlyUploadedImage = '';
+    submit.disabled = true;
+    showNotice(file ? 'Uploading product picture…' : 'Saving product…');
+    if (file) {
+      var upload = await SSPH_DB.adminUploadProductImage(file);
+      if (!upload.ok) {
+        submit.disabled = false;
+        showNotice('Could not upload product picture: ' + upload.error, true);
+        return;
+      }
+      imagePath = upload.data;
+      newlyUploadedImage = upload.data;
+    }
+    var result = await SSPH_DB.adminSaveProduct({
+      id: productId,
+      categoryId: document.getElementById('product-category').value,
+      gender: document.getElementById('product-gender').value,
+      name: document.getElementById('product-name').value,
+      description: document.getElementById('product-description').value,
+      price: document.getElementById('product-price').value,
+      stock: document.getElementById('product-stock').value,
+      colors: document.getElementById('product-colors').value,
+      image: imagePath,
+      featured: document.getElementById('product-featured').checked,
+      isNew: document.getElementById('product-new').checked
+    });
+    if (!result.ok) {
+      var uploadCleanupWarning = '';
+      if (newlyUploadedImage) {
+        var uploadCleanup = await SSPH_DB.adminRemoveProductImage(newlyUploadedImage);
+        if (!uploadCleanup.ok) uploadCleanupWarning = ' The unused uploaded image could not be removed: ' + uploadCleanup.error;
+      }
+      submit.disabled = false;
+      showNotice('Could not save product: ' + result.error + uploadCleanupWarning, true);
+      return;
+    }
+    var cleanupWarning = '';
+    if (newlyUploadedImage && currentProductImage && currentProductImage !== newlyUploadedImage) {
+      var cleanup = await SSPH_DB.adminRemoveProductImage(currentProductImage);
+      if (!cleanup.ok) cleanupWarning = ' Product saved, but the previous image could not be removed: ' + cleanup.error;
+    }
+    resetProductForm();
+    submit.disabled = false;
+    await Promise.all([refreshInventory(), refreshDashboard(false)]);
+    showNotice((productId ? 'Product updated.' : 'Product added to the shop.') + cleanupWarning, !!cleanupWarning);
   });
 
   document.getElementById('all-orders').addEventListener('click', async function (event) {
@@ -265,9 +482,9 @@
 
   loadOwner();
   window.setInterval(function () {
-    if (!document.hidden) refreshDashboard(false);
+    if (!document.hidden) Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
   }, 30000);
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) refreshDashboard(false);
+    if (!document.hidden) Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
   });
 })();

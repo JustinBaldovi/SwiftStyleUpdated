@@ -256,6 +256,8 @@ img { max-width: 100%; display: block; }
   width: fit-content;
 }
 .product-actions { margin-top: auto; }
+.product-stock { color: var(--gray); font-size: .82rem; }
+.product-stock.out-of-stock { color: var(--danger); font-weight: 700; }
 
 /* ---------------- Filters ---------------- */
 .shop-layout { display: grid; grid-template-columns: 220px 1fr; gap: 32px; align-items: start; }
@@ -294,6 +296,24 @@ img { max-width: 100%; display: block; }
 .color-options label:has(input:checked) { border-color: var(--purple); background: #fbe9c6; }
 .qty-input { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
 .stock-note { color: var(--gray); font-size: .9rem; margin-bottom: 16px; }
+.product-reviews { margin-top: 48px; }
+.product-reviews-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.product-reviews-heading h2 { font-size: 1.6rem; }
+.product-reviews-heading p { color: var(--gray); margin-top: 4px; }
+.review-form { display: grid; gap: 10px; max-width: 680px; padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.review-form h3 { font-size: 1.1rem; }
+.review-form label { font-weight: 700; margin-top: 4px; }
+.review-form select, .review-form textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--dark); font: inherit; background: #fff; }
+.review-form-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.review-form-actions span, .review-form small { color: var(--gray); }
+.review-form-actions .error { color: var(--danger); }
+.review-form-actions .success { color: var(--success); }
+.product-review-list { display: grid; gap: 12px; margin-top: 22px; }
+.product-review { padding: 18px 20px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+.product-review-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.product-review-meta time { color: var(--gray); font-size: .82rem; }
+.product-review > p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.review-stars { color: #b66b00; letter-spacing: .08em; font-weight: 800; white-space: nowrap; }
 
 /* ---------------- Forms ---------------- */
 .form-box {
@@ -538,9 +558,22 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
 .owner-status-editor { display: flex; flex-wrap: wrap; gap: 7px; }
 .delete-order { border-color: var(--danger); color: var(--danger); }
 .delete-order:hover { background: var(--danger); color: #fff; }
-.owner-status-editor select, .owner-form input, .owner-form textarea {
+.owner-status-editor select, .owner-form input, .owner-form textarea, .owner-form select {
   width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--dark); font: inherit; background: #fff;
 }
+.inventory-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.inventory-fields > div { min-width: 0; }
+.inventory-description, .inventory-image-field { grid-column: 1 / -1; }
+.inventory-check { display: inline-flex; align-items: center; gap: 8px; }
+.owner-form .inventory-check input { width: auto; }
+.inventory-image-preview { display: block; max-width: 180px; max-height: 180px; object-fit: contain; margin-top: 10px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+.inventory-form-actions, .inventory-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.inventory-product-cell { display: flex; gap: 10px; align-items: center; min-width: 190px; }
+.inventory-row-image { width: 54px; height: 54px; border-radius: 7px; object-fit: cover; background: var(--light-bg); }
+.inventory-stock { font-weight: 700; white-space: nowrap; }
+.inventory-stock.in-stock { color: var(--success); }
+.inventory-stock.out-of-stock { color: var(--danger); }
+.feedback-comment { min-width: 200px; max-width: 420px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .owner-status-editor select { min-width: 145px; width: auto; }
 .status-feedback { display: block; margin-top: 5px; font-size: .78rem; color: var(--success); }
 .owner-empty { padding: 22px 0; color: var(--gray); text-align: center; }
@@ -568,6 +601,8 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
   .owner-metric, .owner-card { padding: 16px; }
   .owner-metric strong { font-size: 1.25rem; }
   .owner-metric small { font-size: .72rem; }
+  .inventory-fields { grid-template-columns: 1fr; }
+  .inventory-description, .inventory-image-field { grid-column: auto; }
 }
 
 /* ---------------- Customer order tracking ---------------- */
