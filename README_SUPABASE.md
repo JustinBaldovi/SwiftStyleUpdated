@@ -26,6 +26,7 @@ I can't reach yours — step 5 below is your smoke test.
    continue to restrict customer and admin operations.
 10. Run `supabase/10_inventory_reviews.sql` to enable admin inventory/image management and customer product reviews.
     It creates the public product-image bucket and review table with RLS; only admins can upload or change products.
+    If the API reports `product_reviews` is missing from the schema cache, rerun this migration and reload the page.
 11. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
@@ -86,8 +87,10 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
   displays customer reviews, and lets the owner save or download a payment QR code.
   Run `supabase/04_owner_dashboard.sql` on existing projects before using the dashboard.
 - Customers can rate products from 1 to 5 stars and leave a comment on the product page. Each signed-in customer can submit
-  one review per product; they can update their own review. The dashboard lists submitted feedback.
-  Run `supabase/10_inventory_reviews.sql` before using inventory image uploads or customer reviews.
+  one review per product; they can update their own review. Signed-in customers can see the latest 50 reviews for each
+  product; the list updates through Supabase Realtime with a periodic refresh fallback. The dashboard lists submitted feedback.
+  Run `supabase/10_inventory_reviews.sql` before using inventory image uploads or customer reviews. If the API reports
+  that `product_reviews` is missing from its schema cache, rerun the migration and reload the page.
 - Product color swatches use the built-in default colors in `assets/js/app.js`; owners only enter color names.
   If you previously added a `color_hexes` column to Supabase, it is unused and can be left in place.
 - Admins can permanently delete orders from the owner dashboard after confirmation. Related order items are deleted too;

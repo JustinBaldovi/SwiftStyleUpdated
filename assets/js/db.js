@@ -393,11 +393,18 @@
     var removed = await sb.storage.from('product-images').remove([image.slice('product-images/'.length)]);
     return removed.error ? fail(removed.error) : ok(true);
   }
+  function reviewError(error) {
+    var message = error && error.message ? error.message : String(error || 'Unknown error.');
+    if (/PGRST205|could not find the table ['"]?public\.product_reviews['"]? in the schema cache|relation ['"]?public\.product_reviews['"]? does not exist/i.test(message)) {
+      return fail('Customer reviews are not set up in Supabase yet. Run supabase/10_inventory_reviews.sql in the SQL Editor, then reload this page.');
+    }
+    return fail(error);
+  }
   async function listProductReviews(productId) {
     var r = await sb.from('product_reviews')
       .select('review_id, product_id, user_id, rating, comment, created_at')
-      .eq('product_id', productId).order('created_at', { ascending: false });
-    return r.error ? fail(r.error) : ok(r.data);
+      .eq('product_id', productId).order('created_at', { ascending: false }).limit(50);
+    return r.error ? reviewError(r.error) : ok(r.data);
   }
   async function getMyProductReview(productId) {
     var s = await sb.auth.getSession();
@@ -405,7 +412,7 @@
     if (!s.data.session) return fail('Please sign in to leave a review.');
     var r = await sb.from('product_reviews').select('rating, comment')
       .eq('product_id', productId).eq('user_id', s.data.session.user.id).maybeSingle();
-    return r.error ? fail(r.error) : ok(r.data);
+    return r.error ? reviewError(r.error) : ok(r.data);
   }
   async function submitProductReview(productId, rating, comment) {
     var s = await sb.auth.getSession();
@@ -422,7 +429,7 @@
       rating: rating,
       comment: comment
     }, { onConflict: 'product_id,user_id' }).select('review_id').single();
-    return r.error ? fail(r.error) : ok(r.data);
+    return r.error ? reviewError(r.error) : ok(r.data);
   }
   async function adminListProductReviews(limit) {
     var q = sb.from('product_reviews')
@@ -430,7 +437,7 @@
       .order('created_at', { ascending: false });
     if (limit) q = q.limit(limit);
     var r = await q;
-    return r.error ? fail(r.error) : ok(r.data);
+    return r.error ? reviewError(r.error) : ok(r.data);
   }
   async function watchProductReviews(productId, onChange, onStatus) {
     var session = await sb.auth.getSession();

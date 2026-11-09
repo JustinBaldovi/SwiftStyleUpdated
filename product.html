@@ -70,41 +70,35 @@
             ` : `<p class="stock-note" style="color:var(--danger); font-weight:700;">Out of Stock</p>`}
           </div>
         </div>
-  
-        ${related.length ? `
-          <h2 class="section-title">You May Also <span>Like</span></h2>
-          <div class="product-grid" id="related-grid"></div>
-        ` : ''}
       `;
-  
-      if (related.length) {
-        renderProductGrid('related-grid', related);
-      }
 
       section.insertAdjacentHTML('beforeend', `
         <section class="product-reviews" aria-labelledby="reviews-title">
           <div class="product-reviews-heading">
             <div><h2 id="reviews-title">Customer reviews</h2><p id="reviews-summary">Loading reviews…</p></div>
+            <span class="review-live-indicator" id="review-live-indicator">Connecting…</span>
           </div>
-          <form id="review-form" class="review-form">
-            <h3>Share your feedback</h3>
-            <label for="review-rating">Your rating</label>
-            <select id="review-rating" required>
-              <option value="5">5 stars — Excellent</option>
-              <option value="4">4 stars — Very good</option>
-              <option value="3">3 stars — Good</option>
-              <option value="2">2 stars — Fair</option>
-              <option value="1">1 star — Poor</option>
-            </select>
-            <label for="review-comment">Comment</label>
-            <textarea id="review-comment" rows="4" maxlength="2000" required placeholder="Tell other shoppers about this bag"></textarea>
-            <div class="review-form-actions">
-              <button type="submit" class="btn" id="submit-review">Submit review</button>
-              <span id="review-message" role="status" aria-live="polite"></span>
-            </div>
-            <small>You can update your review for this product by submitting again.</small>
-          </form>
-          <div id="product-review-list" class="product-review-list"></div>
+          <div class="product-review-columns">
+            <form id="review-form" class="review-form">
+              <h3>Share your feedback</h3>
+              <label for="review-rating">Your rating</label>
+              <select id="review-rating" required>
+                <option value="5">5 stars — Excellent</option>
+                <option value="4">4 stars — Very good</option>
+                <option value="3">3 stars — Good</option>
+                <option value="2">2 stars — Fair</option>
+                <option value="1">1 star — Poor</option>
+              </select>
+              <label for="review-comment">Comment</label>
+              <textarea id="review-comment" rows="2" maxlength="2000" required placeholder="Tell other shoppers about this bag"></textarea>
+              <div class="review-form-actions">
+                <button type="submit" class="btn" id="submit-review">Submit review</button>
+                <span id="review-message" role="status" aria-live="polite"></span>
+              </div>
+              <small>You can update your review for this product by submitting again.</small>
+            </form>
+            <div id="product-review-list" class="product-review-list" aria-live="polite"></div>
+          </div>
         </section>
       `);
 
@@ -115,6 +109,7 @@
         if (!result.ok) {
           summary.textContent = 'Could not load reviews: ' + result.error;
           list.replaceChildren();
+          setReviewLiveStatus('Unavailable', false);
           return;
         }
         const reviews = result.data;
@@ -128,9 +123,17 @@
           return '<article class="product-review">' +
             '<div class="product-review-meta"><span class="review-stars" aria-label="' + Number(review.rating) +
               ' out of 5 stars">' + '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating)) +
-              '</span><time>' + escapeHtml(new Date(review.created_at).toLocaleDateString()) + '</time></div>' +
+              '</span><span class="review-customer">Customer review</span><time>' +
+              escapeHtml(new Date(review.created_at).toLocaleDateString()) + '</time></div>' +
             '<p>' + escapeHtml(review.comment) + '</p></article>';
         }).join('');
+      }
+
+      function setReviewLiveStatus(label, connected) {
+        const indicator = document.getElementById('review-live-indicator');
+        indicator.textContent = label;
+        indicator.classList.toggle('connected', connected);
+        indicator.classList.toggle('disconnected', !connected);
       }
 
       async function loadMyReview() {
@@ -172,8 +175,30 @@
 
       refreshReviews();
       loadMyReview();
-      const reviewWatch = await SSPH_DB.watchProductReviews(product.id, refreshReviews);
-      if (!reviewWatch.ok) console.error('[Reviews] Live updates unavailable:', reviewWatch.error);
+      const reviewWatch = await SSPH_DB.watchProductReviews(product.id, refreshReviews, function (status) {
+        if (status === 'SUBSCRIBED') {
+          setReviewLiveStatus('Live updates on', true);
+          refreshReviews();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setReviewLiveStatus('Reconnecting · auto-refresh on', false);
+        }
+      });
+      if (!reviewWatch.ok) {
+        setReviewLiveStatus('Auto-refresh on', false);
+        console.error('[Reviews] Live updates unavailable:', reviewWatch.error);
+      }
+      window.setInterval(function () {
+        if (!document.hidden) refreshReviews();
+      }, 15000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) refreshReviews();
+      });
+
+      if (related.length) {
+        section.insertAdjacentHTML('beforeend',
+          '<h2 class="section-title">You May Also <span>Like</span></h2><div class="product-grid" id="related-grid"></div>');
+        renderProductGrid('related-grid', related);
+      }
 
       const form = document.getElementById('add-to-cart-form');
       if (form) {
