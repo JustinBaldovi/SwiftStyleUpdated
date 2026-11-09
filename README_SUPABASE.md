@@ -11,11 +11,15 @@ I can't reach yours — step 5 below is your smoke test.
 2. **Authentication → Providers → Email → turn OFF "Confirm email".**
    (Facebook/Instagram accounts use made-up internal emails that can't receive mail, so confirmation must be off.)
 3. **SQL Editor** → run, in this order: `supabase/01_schema.sql`, `supabase/02_seed.sql`.
-4. **Authentication → Users → Add user** → `admin@swiftstyleph.com` + a password, tick *Auto Confirm User*.
-   Then run `supabase/03_make_admin.sql`.
-5. Run `supabase/04_owner_dashboard.sql` to add fulfillment statuses and owner payment-QR storage.
-6. Run `supabase/05_realtime_orders.sql` to publish order changes to Supabase Realtime.
-7. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+4. On existing projects where signup fails with `column "id" of relation "profiles" does not exist`,
+   run `supabase/06_fix_profiles_user_id.sql` before creating users. It safely renames the existing
+   UUID primary-key column `user_id` to `id`; it does not recreate or delete profile data. It is also
+   safe to run on a correctly initialized project.
+5. **Authentication → Users → Add user** → a real email you control + a strong password; tick *Auto Confirm User*.
+   Then run `supabase/03_make_admin.sql` (update its email to match the owner account first).
+6. Run `supabase/04_owner_dashboard.sql` to add fulfillment statuses and owner payment-QR storage.
+7. Run `supabase/05_realtime_orders.sql` to publish order changes to Supabase Realtime.
+8. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
