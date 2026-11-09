@@ -61,6 +61,13 @@ Product color dots use the built-in default color palette in `COLOR_HEX` in
 values or color-specific photos are required. If a custom color name is added,
 add its swatch to `COLOR_HEX`; unknown names use a neutral gray swatch.
 
+## Background music
+
+The supplied store theme is available from the music button directly below
+Home in the navigation. Press the button to play or pause; adjust the volume
+with the slider. Browsers require a user gesture before playing audio. Volume,
+play preference, and playback position are remembered between page changes.
+
 ## What's New (Earlier Update)
 
 - Warm brown → gold color theme, matching the PHP version

@@ -236,6 +236,57 @@ function openSocialModal(provider, mode) {
 }
 
 /* ---------------- Header / Footer (rendered by JS on every page) ---------------- */
+const BACKGROUND_MUSIC_KEY = 'ssph_background_music';
+const BACKGROUND_VOLUME_KEY = 'ssph_background_volume';
+const BACKGROUND_TIME_KEY = 'ssph_background_time';
+
+function getBackgroundMusic() {
+  if (window.ssphBackgroundMusic) return window.ssphBackgroundMusic;
+  const audio = document.createElement('audio');
+  audio.src = 'assets/audio/store-background.mp3';
+  audio.loop = true;
+  audio.preload = 'metadata';
+  audio.volume = 0.2;
+  audio.setAttribute('aria-hidden', 'true');
+  audio.addEventListener('play', function () {
+    if (window.ssphUpdateMusicControl) window.ssphUpdateMusicControl();
+  });
+  audio.addEventListener('pause', function () {
+    if (window.ssphUpdateMusicControl) window.ssphUpdateMusicControl();
+  });
+  audio.addEventListener('error', function () {
+    window.ssphMusicLoadError = true;
+    if (window.ssphUpdateMusicControl) window.ssphUpdateMusicControl();
+    console.error('[Music] Could not load assets/audio/store-background.mp3.');
+  }, { once: true });
+  document.body.appendChild(audio);
+  window.ssphBackgroundMusic = audio;
+  try {
+    const savedVolumeValue = localStorage.getItem(BACKGROUND_VOLUME_KEY);
+    const savedVolume = savedVolumeValue === null ? NaN : Number(savedVolumeValue);
+    if (Number.isFinite(savedVolume) && savedVolume >= 0 && savedVolume <= 1) audio.volume = savedVolume;
+    const savedTime = Number(localStorage.getItem(BACKGROUND_TIME_KEY));
+    if (Number.isFinite(savedTime) && savedTime > 0) {
+      audio.addEventListener('loadedmetadata', function () {
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          audio.currentTime = savedTime % audio.duration;
+        }
+      }, { once: true });
+    }
+  } catch (error) {
+    console.warn('[Music] Could not restore playback preferences:', error);
+  }
+  return audio;
+}
+
+function saveBackgroundMusicPreference(key, value) {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch (error) {
+    console.warn('[Music] Could not save playback preference:', error);
+  }
+}
+
 function renderHeader() {
   const el = document.getElementById('site-header');
   if (!el) return;
@@ -258,7 +309,18 @@ function renderHeader() {
     <div class="container header-inner">
       <a href="index.html" class="logo">Swift Style <span>PH</span></a>
       <nav class="main-nav">
-        <a href="index.html">Home</a>
+        <div class="home-nav-item">
+          <a href="index.html">Home</a>
+          <div class="home-audio-control">
+            <button type="button" class="music-toggle" aria-pressed="false" aria-label="Play background music" title="Play background music">
+              <span class="music-icon" aria-hidden="true">♫</span>
+            </button>
+            <label class="music-volume-label">
+              <span class="sr-only">Background music volume</span>
+              <input class="music-volume" type="range" min="0" max="1" step="0.01" value="0.2" aria-label="Background music volume">
+            </label>
+          </div>
+        </div>
         <a href="shop.html">Shop</a>
         <div class="dropdown">
           <span>Categories ▾</span>
@@ -297,6 +359,57 @@ function renderHeader() {
       </div>
     </div>
   </header>`;
+
+  const music = getBackgroundMusic();
+  const musicToggle = el.querySelector('.music-toggle');
+  const musicVolume = el.querySelector('.music-volume');
+  function updateMusicControl() {
+    const playing = !music.paused;
+    musicToggle.disabled = !!window.ssphMusicLoadError;
+    musicToggle.setAttribute('aria-pressed', String(playing));
+    musicToggle.setAttribute('aria-label', playing ? 'Pause background music' : 'Play background music');
+    musicToggle.title = playing ? 'Pause background music' : 'Play background music';
+    musicToggle.classList.toggle('is-playing', playing);
+    musicToggle.querySelector('.music-icon').textContent = playing ? 'Ⅱ' : '♫';
+  }
+  window.ssphUpdateMusicControl = updateMusicControl;
+  musicVolume.value = String(music.volume);
+  musicToggle.addEventListener('click', function () {
+    if (!music.paused) {
+      music.pause();
+      saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '0');
+      updateMusicControl();
+      return;
+    }
+    music.play().then(function () {
+      saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '1');
+      updateMusicControl();
+    }).catch(function (error) {
+      saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '0');
+      updateMusicControl();
+      console.warn('[Music] Playback could not start:', error);
+    });
+  });
+  musicVolume.addEventListener('input', function () {
+    music.volume = Number(musicVolume.value);
+    saveBackgroundMusicPreference(BACKGROUND_VOLUME_KEY, music.volume);
+  });
+  if (el._musicPagehide) window.removeEventListener('pagehide', el._musicPagehide);
+  el._musicPagehide = function () {
+    saveBackgroundMusicPreference(BACKGROUND_TIME_KEY, music.currentTime || 0);
+  };
+  window.addEventListener('pagehide', el._musicPagehide);
+  try {
+    if (localStorage.getItem(BACKGROUND_MUSIC_KEY) === '1' && music.paused) {
+      music.play().catch(function (error) {
+        updateMusicControl();
+        console.info('[Music] Tap the music button to resume playback:', error);
+      });
+    }
+  } catch (error) {
+    console.warn('[Music] Could not read playback preference:', error);
+  }
+  updateMusicControl();
 
   const badge = el.querySelector('.cart-badge');
   if (badge) SSPH_DB.cartCount().then(function (n) { badge.textContent = n; });
