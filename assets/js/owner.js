@@ -10,12 +10,19 @@
   }
 
   function setPanel(name) {
+    var validPanel = Array.prototype.some.call(document.querySelectorAll('.owner-tab'), function (button) {
+      return button.dataset.panel === name;
+    });
+    if (!validPanel) name = 'overview';
     document.querySelectorAll('.owner-tab').forEach(function (button) {
       button.classList.toggle('active', button.dataset.panel === name);
     });
     document.querySelectorAll('.owner-panel').forEach(function (panel) {
       panel.hidden = panel.id !== 'panel-' + name;
     });
+    if (window.location.hash !== '#' + name) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#' + name);
+    }
   }
 
   function dateLabel(value) {
@@ -297,6 +304,7 @@
   document.querySelectorAll('.owner-tab').forEach(function (button) {
     button.addEventListener('click', function () { setPanel(button.dataset.panel); });
   });
+  setPanel(window.location.hash.slice(1) || 'overview');
   document.querySelectorAll('[data-open-panel]').forEach(function (button) {
     button.addEventListener('click', function () { setPanel(button.dataset.openPanel); });
   });

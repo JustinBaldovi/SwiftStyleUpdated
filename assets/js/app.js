@@ -260,8 +260,6 @@ function renderHeader() {
       <nav class="main-nav">
         <a href="index.html">Home</a>
         <a href="shop.html">Shop</a>
-        <a href="orders.html">My Orders</a>
-        <a href="owner.html">Owner Dashboard</a>
         <div class="dropdown">
           <span>Categories ▾</span>
           <div class="dropdown-menu category-mega-menu">
@@ -288,6 +286,11 @@ function renderHeader() {
           </button>
           <div class="profile-dropdown" id="profile-dropdown" hidden>
             <span class="profile-dropdown-name">${escapeHtml(user.fullName || 'Your account')}</span>
+            <a href="orders.html" class="profile-menu-link">My orders</a>
+            ${user.role === 'admin'
+              ? '<a href="owner.html" class="profile-menu-link">Owner dashboard</a>' +
+                '<a href="owner.html#profile" class="profile-menu-link">Owner profile &amp; QR</a>'
+              : ''}
             <button type="button" id="logout-link" class="profile-logout">Log out</button>
           </div>
         </div>

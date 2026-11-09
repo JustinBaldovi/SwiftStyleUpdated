@@ -253,6 +253,16 @@ img { max-width: 100%; display: block; }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .profile-dropdown-name { padding: 8px 10px 10px; font-size: .9rem; font-weight: 800; overflow-wrap: anywhere; }
+.profile-menu-link {
+  display: block;
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--dark);
+  font-size: .9rem;
+  font-weight: 650;
+  transition: background .16s ease, color .16s ease;
+}
+.profile-menu-link:hover { background: #f8efd9; color: var(--rust); }
 .profile-logout {
   width: 100%;
   padding: 10px;
