@@ -363,7 +363,12 @@
     var r = p.id
       ? await sb.from('products').update(row).eq('product_id', p.id).select('product_id').maybeSingle()
       : await sb.from('products').insert(row).select('product_id').single();
-    if (r.error) return fail(r.error);
+    if (r.error) {
+      if (/color_hexes.*schema cache|could not find.*color_hexes.*column/i.test(r.error.message || '')) {
+        return fail('Hex color support is not enabled in Supabase yet. Run supabase/12_product_color_hex_codes.sql in the SQL Editor, then reload this page.');
+      }
+      return fail(r.error);
+    }
     return r.data ? ok(r.data) : fail('Product was not found or you do not have permission to change it.');
   }
   async function adminDeleteProduct(productId) {
