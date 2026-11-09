@@ -365,4 +365,23 @@ function sortProducts(list, sort) {
 document.addEventListener('DOMContentLoaded', function () {
   renderHeader();
   renderFooter();
+  if (window.SSPH_DB) {
+    var previousUser = getCurrentUser();
+    SSPH_DB.getProfile().then(function (result) {
+      if (!result.ok) {
+        if (result.error !== 'Not signed in.') {
+          console.error('[Auth] Could not refresh the signed-in profile:', result.error);
+        }
+        return;
+      }
+
+      var profile = result.data;
+      if (!previousUser ||
+          previousUser.role !== profile.role ||
+          previousUser.fullName !== profile.full_name ||
+          previousUser.email !== profile.email) {
+        renderHeader();
+      }
+    });
+  }
 });
