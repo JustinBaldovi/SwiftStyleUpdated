@@ -59,6 +59,7 @@
                         <span><i class="swatch" style="background:${productColorHex(product, c)}"></i>${escapeHtml(c)}</span>
                       </label>`).join('')}
                   </div>
+                  <p class="selected-color-preview" id="selected-color-preview" aria-live="polite"></p>
                 </div>` : ''}
                 <div class="option-group">
                   <label for="quantity">Quantity</label>
@@ -177,9 +178,7 @@
 
       const form = document.getElementById('add-to-cart-form');
       if (form) {
-        // Changing the colour swaps the bag photo to that colour
         const mainImg = document.getElementById('product-main-img');
-        const colorName = document.getElementById('color-name');
         const fallbackProductImage = function () {
           const fallback = new URL(mainImg.dataset.fallbackSrc, document.baseURI).href;
           if (mainImg.src !== fallback) {
@@ -189,23 +188,18 @@
           }
         };
         mainImg.addEventListener('error', fallbackProductImage);
-        // warm the cache so swaps are instant
-        product.colors.forEach(function (c) { new Image().src = productImage(product, c); });
+        const colorName = document.getElementById('color-name');
+        const selectedColorPreview = document.getElementById('selected-color-preview');
+        const updateSelectedColor = function (color) {
+          const hex = productColorHex(product, color);
+          selectedColorPreview.innerHTML = '<i class="swatch" style="background-color:' + hex +
+            '"></i><span>' + escapeHtml(color) + ' · ' + hex.toUpperCase() + '</span>';
+        };
+        updateSelectedColor(product.colors[0]);
         form.querySelectorAll('input[name="color"]').forEach(function (radio) {
           radio.addEventListener('change', function () {
             if (colorName) colorName.textContent = radio.value;
-            mainImg.classList.add('swapping');
-            const next = new Image();
-            next.onload = function () {
-              mainImg.src = next.src;
-              mainImg.alt = product.name + ' - ' + radio.value;
-              mainImg.classList.remove('swapping');
-            };
-            next.onerror = function () {
-              mainImg.src = mainImg.dataset.fallbackSrc;
-              mainImg.classList.remove('swapping');
-            };
-            next.src = productImage(product, radio.value);
+            updateSelectedColor(radio.value);
           });
         });
         form.addEventListener('submit', function (e) {

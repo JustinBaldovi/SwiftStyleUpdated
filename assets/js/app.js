@@ -20,24 +20,32 @@ const COLOR_HEX = {
   'Blush': '#eec2c0', 'Taupe': '#9a8777', 'Yellow': '#f6c730', 'Sky Blue': '#6cc0ea',
   'Blue': '#2a62c8', 'Green': '#2f9d5a'
 };
-function colorSlug(c) {
-  return String(c).toLowerCase().replace(/\s+/g, '-');
+function normalizeColorName(color) {
+  return String(color || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+function savedProductColorHex(colorHexes, color) {
+  const key = normalizeColorName(color);
+  if (!colorHexes || !key) return '';
+  const matchedKey = Object.keys(colorHexes).find(function (name) {
+    return normalizeColorName(name) === key;
+  });
+  const hex = matchedKey ? String(colorHexes[matchedKey]).trim() : '';
+  return /^#[0-9a-f]{6}$/i.test(hex) ? hex.toLowerCase() : '';
 }
 function productColorHex(product, color) {
-  const assigned = product.colorHexes && product.colorHexes[color];
-  return /^#[0-9a-f]{6}$/i.test(assigned || '') ? assigned : (COLOR_HEX[color] || '#cccccc');
+  const saved = savedProductColorHex(product.colorHexes, color);
+  if (saved) return saved;
+  const key = normalizeColorName(color);
+  const defaultName = Object.keys(COLOR_HEX).find(function (name) {
+    return normalizeColorName(name) === key;
+  });
+  return defaultName ? COLOR_HEX[defaultName] : '#cccccc';
 }
-/* Photo of the bag in the chosen colour. Files live in assets/img/variants/
-   and are named <photo>-<colour>.webp (e.g. backpack1-navy.webp).
-   With no colour given, the product's first listed colour is used. */
-function productImage(p, color) {
+/* Use one product photo; the selected color is represented by its exact hex swatch. */
+function productImage(p) {
   if (!p.image) return IMG_PLACEHOLDER;
   if (/^https?:\/\//i.test(p.image) || p.image.indexOf('product-images/') === 0) return p.image;
-  if (!p.colors || !p.colors.length) return 'assets/img/' + p.image;   // single-photo product
-  const c = color || p.colors[0];
-  if (!c) return 'assets/img/' + p.image;
-  const stem = p.image.replace(/\.[a-z]+$/i, '');
-  return 'assets/img/variants/' + stem + '-' + colorSlug(c) + '.webp';
+  return 'assets/img/' + p.image;
 }
 function productBaseImage(p) {
   if (!p.image) return IMG_PLACEHOLDER;

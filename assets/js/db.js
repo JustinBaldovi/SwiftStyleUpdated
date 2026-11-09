@@ -341,17 +341,18 @@
       return fail('Each product color must be unique.');
     }
     var colorHexes = {};
-    Object.keys(p.colorHexes || {}).forEach(function (color) {
-      if (colors.indexOf(color) >= 0 && String(p.colorHexes[color] || '').trim()) {
-        var hex = String(p.colorHexes[color]).trim();
-        if (!/^#[0-9a-f]{6}$/i.test(hex)) return;
-        colorHexes[color] = hex.toLowerCase();
-      }
-    });
     for (var colorIndex = 0; colorIndex < colors.length; colorIndex += 1) {
-      var assignedHex = p.colorHexes && p.colorHexes[colors[colorIndex]];
-      if (assignedHex && !/^#[0-9a-f]{6}$/i.test(String(assignedHex).trim())) {
-        return fail('Enter a valid six-digit hex code for ' + colors[colorIndex] + '.');
+      var color = colors[colorIndex];
+      var matchedKey = Object.keys(p.colorHexes || {}).find(function (name) {
+        return String(name).trim().replace(/\s+/g, ' ').toLowerCase() ===
+          color.replace(/\s+/g, ' ').toLowerCase();
+      });
+      var assignedHex = matchedKey ? String(p.colorHexes[matchedKey] || '').trim() : '';
+      if (assignedHex) {
+        if (!/^#[0-9a-f]{6}$/i.test(assignedHex)) {
+          return fail('Enter a valid six-digit hex code for ' + color + '.');
+        }
+        colorHexes[color] = assignedHex.toLowerCase();
       }
     }
     var row = {

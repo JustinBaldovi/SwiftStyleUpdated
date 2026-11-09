@@ -87,7 +87,7 @@
     var container = document.getElementById('product-color-hexes');
     var colors = productColors();
     container.innerHTML = colors.length ? colors.map(function (color, index) {
-      var hex = currentColorHexes[color] || COLOR_HEX[color] || '#cccccc';
+      var hex = savedProductColorHex(currentColorHexes, color) || productColorHex({}, color);
       if (!validHexColor(hex)) hex = '#cccccc';
       return '<div class="color-hex-row">' +
         '<label for="color-hex-text-' + index + '">' + escapeHtml(color) + '</label>' +
@@ -109,8 +109,7 @@
       var image = SSPH_DB.productImageUrl(product.image);
       var stock = Number(product.stock);
       var swatches = (product.colors || []).map(function (color) {
-        var hex = product.color_hexes && product.color_hexes[color];
-        if (!validHexColor(hex)) hex = COLOR_HEX[color] || '#cccccc';
+        var hex = savedProductColorHex(product.color_hexes, color) || productColorHex({}, color);
         return '<span class="color-swatch-preview" title="' + escapeHtml(color) +
           '" aria-label="' + escapeHtml(color) + '" style="background-color:' + hex + '"></span>';
       }).join('');
