@@ -23,16 +23,16 @@ const COLOR_HEX = {
 function colorSlug(c) {
   return String(c).toLowerCase().replace(/\s+/g, '-');
 }
+function productColorHex(product, color) {
+  const assigned = product.colorHexes && product.colorHexes[color];
+  return /^#[0-9a-f]{6}$/i.test(assigned || '') ? assigned : (COLOR_HEX[color] || '#cccccc');
+}
 /* Photo of the bag in the chosen colour. Files live in assets/img/variants/
    and are named <photo>-<colour>.webp (e.g. backpack1-navy.webp).
    With no colour given, the product's first listed colour is used. */
 function productImage(p, color) {
-  if (color && p.colorImages && p.colorImages[color]) return p.colorImages[color];
-  if (!color && p.colors && p.colors.length && p.colorImages && p.colorImages[p.colors[0]]) {
-    return p.colorImages[p.colors[0]];
-  }
   if (!p.image) return IMG_PLACEHOLDER;
-  if (/^https?:\/\//i.test(p.image)) return p.image;
+  if (/^https?:\/\//i.test(p.image) || p.image.indexOf('product-images/') === 0) return p.image;
   if (!p.colors || !p.colors.length) return 'assets/img/' + p.image;   // single-photo product
   const c = color || p.colors[0];
   if (!c) return 'assets/img/' + p.image;
@@ -361,6 +361,12 @@ function productCardHTML(p) {
       ${p.isNew ? '<span class="product-badge">NEW</span>' : ''}
       <h3><a href="product.html?id=${p.id}">${escapeHtml(p.name)}</a></h3>
       <div class="product-price">${formatPrice(p.price)}</div>
+      ${p.colors && p.colors.length ? '<div class="product-card-colors" aria-label="Available colors">' +
+        p.colors.map(function (color) {
+          return '<span class="product-card-swatch" title="' + escapeHtml(color) +
+            '" aria-label="' + escapeHtml(color) + '" style="background-color:' +
+            escapeHtml(productColorHex(p, color)) + '"></span>';
+        }).join('') + '</div>' : ''}
       ${Number(p.stock) > 0 ? '<small class="product-stock">' + Number(p.stock) + ' in stock</small>' : '<small class="product-stock out-of-stock">Out of stock</small>'}
       <div class="product-actions">
         <a href="product.html?id=${p.id}" class="btn btn-secondary btn-block">View Product</a>

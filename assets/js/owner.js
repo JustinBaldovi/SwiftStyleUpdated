@@ -70,50 +70,36 @@
 
   var inventoryProducts = [];
   var currentProductImage = '';
-  var currentColorImages = {};
-  var colorImageFiles = {};
-  var colorImageObjectUrls = {};
+  var currentColorHexes = {};
   var previewObjectUrl = '';
 
   function productColors() {
-    var seen = {};
     return document.getElementById('product-colors').value.split(',')
       .map(function (color) { return color.trim(); })
-      .filter(function (color) {
-        var key = color.toLowerCase();
-        if (!color || seen[key]) return false;
-        seen[key] = true;
-        return true;
-      });
+      .filter(Boolean);
   }
 
-  function clearColorImageObjectUrls() {
-    Object.keys(colorImageObjectUrls).forEach(function (color) {
-      URL.revokeObjectURL(colorImageObjectUrls[color]);
-    });
-    colorImageObjectUrls = {};
+  function validHexColor(value) {
+    return /^#[0-9a-f]{6}$/i.test(value || '');
   }
 
-  function renderColorImageFields() {
-    var container = document.getElementById('product-color-images');
+  function renderColorHexFields() {
+    var container = document.getElementById('product-color-hexes');
     var colors = productColors();
-    Object.keys(colorImageFiles).forEach(function (color) {
-      if (colors.indexOf(color) < 0) {
-        delete colorImageFiles[color];
-        if (colorImageObjectUrls[color]) URL.revokeObjectURL(colorImageObjectUrls[color]);
-        delete colorImageObjectUrls[color];
-      }
-    });
     container.innerHTML = colors.length ? colors.map(function (color, index) {
-      var source = colorImageObjectUrls[color] || SSPH_DB.productImageUrl(currentColorImages[color]);
-      return '<div class="color-image-row">' +
-        '<label for="color-image-' + index + '">' + escapeHtml(color) + ' picture</label>' +
-        '<input type="file" id="color-image-' + index + '" class="color-image-input" data-color="' +
-          escapeHtml(color) + '" accept="image/jpeg,image/png,image/webp">' +
-        (source ? '<img class="inventory-image-preview color-image-preview" src="' + escapeHtml(source) +
-          '" alt="' + escapeHtml(color) + ' bag preview">' : '<span class="color-image-empty">No separate picture assigned</span>') +
+      var hex = currentColorHexes[color] || COLOR_HEX[color] || '#cccccc';
+      if (!validHexColor(hex)) hex = '#cccccc';
+      return '<div class="color-hex-row">' +
+        '<label for="color-hex-text-' + index + '">' + escapeHtml(color) + '</label>' +
+        '<input type="color" class="color-hex-picker" data-color="' + escapeHtml(color) +
+          '" aria-label="' + escapeHtml(color) + ' color picker" value="' + hex + '">' +
+        '<div><input type="text" class="color-hex-value" id="color-hex-text-' + index +
+          '" data-color="' + escapeHtml(color) + '" maxlength="7" pattern="#[0-9A-Fa-f]{6}" value="' + hex +
+          '" aria-label="' + escapeHtml(color) + ' hex code" required>' +
+          '<span class="color-swatch-preview" data-preview-color="' + escapeHtml(color) +
+          '" style="background-color:' + hex + '"></span></div>' +
         '</div>';
-    }).join('') : '<p class="color-image-empty">Enter one or more colors to assign variant pictures.</p>';
+    }).join('') : '<p class="color-hex-empty">Enter one or more colors to set their hex colors.</p>';
   }
 
   function renderInventory(products) {
@@ -122,9 +108,16 @@
     document.getElementById('inventory-products').innerHTML = products.map(function (product) {
       var image = SSPH_DB.productImageUrl(product.image);
       var stock = Number(product.stock);
+      var swatches = (product.colors || []).map(function (color) {
+        var hex = product.color_hexes && product.color_hexes[color];
+        if (!validHexColor(hex)) hex = COLOR_HEX[color] || '#cccccc';
+        return '<span class="color-swatch-preview" title="' + escapeHtml(color) +
+          '" aria-label="' + escapeHtml(color) + '" style="background-color:' + hex + '"></span>';
+      }).join('');
       return '<tr><td class="inventory-product-cell">' +
         (image ? '<img class="inventory-row-image" src="' + escapeHtml(image) + '" alt="">' : '') +
-        '<span><strong>' + escapeHtml(product.product_name) + '</strong><small>' + escapeHtml(product.gender) + '</small></span></td>' +
+        '<span><strong>' + escapeHtml(product.product_name) + '</strong><small>' + escapeHtml(product.gender) + '</small>' +
+          (swatches ? '<span class="inventory-color-swatches">' + swatches + '</span>' : '') + '</span></td>' +
         '<td>' + escapeHtml(product.categories && product.categories.category_name || '—') + '</td>' +
         '<td>' + formatPrice(product.price) + '</td>' +
         '<td><span class="inventory-stock ' + (stock > 0 ? 'in-stock' : 'out-of-stock') + '">' +
@@ -185,10 +178,8 @@
     document.getElementById('save-product').textContent = 'Add product';
     document.getElementById('cancel-product-edit').hidden = true;
     currentProductImage = '';
-    currentColorImages = {};
-    colorImageFiles = {};
-    clearColorImageObjectUrls();
-    renderColorImageFields();
+    currentColorHexes = {};
+    renderColorHexFields();
     var preview = document.getElementById('product-image-preview');
     preview.hidden = true;
     preview.removeAttribute('src');
@@ -199,8 +190,6 @@
   function beginProductEdit(product) {
     if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
     previewObjectUrl = '';
-    clearColorImageObjectUrls();
-    colorImageFiles = {};
     document.getElementById('product-id').value = product.product_id;
     document.getElementById('product-name').value = product.product_name || '';
     document.getElementById('product-category').value = product.category_id;
@@ -213,13 +202,12 @@
     document.getElementById('product-new').checked = !!product.is_new;
     document.getElementById('product-image').value = '';
     currentProductImage = product.image || '';
-    currentColorImages = Object.assign({}, product.color_images || {});
-    colorImageFiles = {};
+    currentColorHexes = Object.assign({}, product.color_hexes || {});
     var preview = document.getElementById('product-image-preview');
     var imageUrl = SSPH_DB.productImageUrl(currentProductImage);
     preview.hidden = !imageUrl;
     if (imageUrl) preview.src = imageUrl;
-    renderColorImageFields();
+    renderColorHexFields();
     document.getElementById('product-form-title').textContent = 'Edit product';
     document.getElementById('save-product').textContent = 'Save changes';
     document.getElementById('cancel-product-edit').hidden = false;
@@ -363,20 +351,28 @@
     preview.hidden = false;
   });
 
-  document.getElementById('product-colors').addEventListener('input', renderColorImageFields);
-  document.getElementById('product-color-images').addEventListener('change', function (event) {
-    var input = event.target.closest('.color-image-input');
-    if (!input) return;
+  document.getElementById('product-colors').addEventListener('input', renderColorHexFields);
+  document.getElementById('product-color-hexes').addEventListener('input', function (event) {
+    var input = event.target;
     var color = input.dataset.color;
-    var file = input.files && input.files[0];
-    if (colorImageObjectUrls[color]) URL.revokeObjectURL(colorImageObjectUrls[color]);
-    delete colorImageObjectUrls[color];
-    delete colorImageFiles[color];
-    if (file) {
-      colorImageFiles[color] = file;
-      colorImageObjectUrls[color] = URL.createObjectURL(file);
+    if (!color) return;
+    if (input.classList.contains('color-hex-picker')) {
+      currentColorHexes[color] = input.value;
+      var hexField = document.querySelector('.color-hex-value[data-color="' + CSS.escape(color) + '"]');
+      if (hexField) hexField.value = input.value;
+    } else if (input.classList.contains('color-hex-value')) {
+      currentColorHexes[color] = input.value;
+      var picker = document.querySelector('.color-hex-picker[data-color="' + CSS.escape(color) + '"]');
+      if (validHexColor(input.value)) {
+        if (picker) picker.value = input.value;
+      }
+    } else {
+      return;
     }
-    renderColorImageFields();
+    var preview = document.querySelector('.color-swatch-preview[data-preview-color="' + CSS.escape(color) + '"]');
+    if (preview && validHexColor(currentColorHexes[color])) {
+      preview.style.backgroundColor = currentColorHexes[color];
+    }
   });
 
   document.getElementById('cancel-product-edit').addEventListener('click', resetProductForm);
@@ -413,14 +409,15 @@
     var file = document.getElementById('product-image').files[0];
     var imagePath = currentProductImage;
     var colors = productColors();
-    var colorImages = {};
+    var colorHexes = {};
     colors.forEach(function (color) {
-      if (currentColorImages[color]) colorImages[color] = currentColorImages[color];
+      var input = document.querySelector('.color-hex-value[data-color="' + CSS.escape(color) + '"]');
+      var hex = input ? input.value.trim() : currentColorHexes[color] || COLOR_HEX[color] || '#cccccc';
+      if (validHexColor(hex)) colorHexes[color] = hex.toLowerCase();
     });
     var newlyUploadedImage = '';
-    var newlyUploadedColorImages = [];
     submit.disabled = true;
-    showNotice(file || Object.keys(colorImageFiles).length ? 'Uploading product pictures…' : 'Saving product…');
+    showNotice(file ? 'Uploading product picture…' : 'Saving product…');
     if (file) {
       var upload = await SSPH_DB.adminUploadProductImage(file);
       if (!upload.ok) {
@@ -431,28 +428,6 @@
       imagePath = upload.data;
       newlyUploadedImage = upload.data;
     }
-    for (var colorIndex = 0; colorIndex < colors.length; colorIndex += 1) {
-      var colorName = colors[colorIndex];
-      if (!colorImageFiles[colorName]) continue;
-      var colorUpload = await SSPH_DB.adminUploadProductImage(colorImageFiles[colorName]);
-      if (!colorUpload.ok) {
-        var imageCleanupErrors = [];
-        for (var cleanupIndex = 0; cleanupIndex < newlyUploadedColorImages.length; cleanupIndex += 1) {
-          var removedColor = await SSPH_DB.adminRemoveProductImage(newlyUploadedColorImages[cleanupIndex]);
-          if (!removedColor.ok) imageCleanupErrors.push(removedColor.error);
-        }
-        if (newlyUploadedImage) {
-          var removedMain = await SSPH_DB.adminRemoveProductImage(newlyUploadedImage);
-          if (!removedMain.ok) imageCleanupErrors.push(removedMain.error);
-        }
-        submit.disabled = false;
-        showNotice('Could not upload the ' + colorName + ' picture: ' + colorUpload.error +
-          (imageCleanupErrors.length ? ' Unused uploads could not be removed: ' + imageCleanupErrors.join('; ') : ''), true);
-        return;
-      }
-      colorImages[colorName] = colorUpload.data;
-      newlyUploadedColorImages.push(colorUpload.data);
-    }
     var result = await SSPH_DB.adminSaveProduct({
       id: productId,
       categoryId: document.getElementById('product-category').value,
@@ -462,7 +437,7 @@
       price: document.getElementById('product-price').value,
       stock: document.getElementById('product-stock').value,
       colors: colors,
-      colorImages: colorImages,
+      colorHexes: colorHexes,
       image: imagePath,
       featured: document.getElementById('product-featured').checked,
       isNew: document.getElementById('product-new').checked
@@ -473,25 +448,15 @@
         var uploadCleanup = await SSPH_DB.adminRemoveProductImage(newlyUploadedImage);
         if (!uploadCleanup.ok) uploadCleanupWarnings.push(uploadCleanup.error);
       }
-      for (var failedColorIndex = 0; failedColorIndex < newlyUploadedColorImages.length; failedColorIndex += 1) {
-        var colorCleanup = await SSPH_DB.adminRemoveProductImage(newlyUploadedColorImages[failedColorIndex]);
-        if (!colorCleanup.ok) uploadCleanupWarnings.push(colorCleanup.error);
-      }
       submit.disabled = false;
       showNotice('Could not save product: ' + result.error +
         (uploadCleanupWarnings.length ? ' Unused uploads could not be removed: ' + uploadCleanupWarnings.join('; ') : ''), true);
       return;
     }
     var cleanupWarnings = [];
-    var newImagePaths = [imagePath].concat(Object.keys(colorImages).map(function (color) { return colorImages[color]; }));
-    var oldImages = [currentProductImage].concat(Object.keys(currentColorImages).map(function (color) { return currentColorImages[color]; }))
-      .filter(function (image, index, list) {
-        return image && list.indexOf(image) === index &&
-          newImagePaths.indexOf(image) < 0;
-      });
-    for (var oldImageIndex = 0; oldImageIndex < oldImages.length; oldImageIndex += 1) {
-      var removedOldImage = await SSPH_DB.adminRemoveProductImage(oldImages[oldImageIndex]);
-      if (!removedOldImage.ok) cleanupWarnings.push(removedOldImage.error);
+    if (newlyUploadedImage && currentProductImage && currentProductImage !== newlyUploadedImage) {
+      var removedOldMainImage = await SSPH_DB.adminRemoveProductImage(currentProductImage);
+      if (!removedOldMainImage.ok) cleanupWarnings.push(removedOldMainImage.error);
     }
     resetProductForm();
     submit.disabled = false;

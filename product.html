@@ -56,7 +56,7 @@
                     ${product.colors.map((c, i) => `
                       <label>
                         <input type="radio" name="color" value="${escapeHtml(c)}" ${i === 0 ? 'checked' : ''}>
-                        <span><i class="swatch" style="background:${COLOR_HEX[c] || '#ccc'}"></i>${escapeHtml(c)}</span>
+                        <span><i class="swatch" style="background:${productColorHex(product, c)}"></i>${escapeHtml(c)}</span>
                       </label>`).join('')}
                   </div>
                 </div>` : ''}
