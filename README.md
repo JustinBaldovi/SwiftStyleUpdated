@@ -54,19 +54,12 @@ The static gate is `assets/js/gate.js` (front-end only, so it is a convenience
 lock, not real security). The PHP version enforces the lock on the server in
 `data base/includes/functions.php` (`enforceLoginGate()`).
 
-## Color-matched bag photos (Latest Update)
+## Product color swatches
 
-Picking a color on a product page now changes the bag photo to that color, for
-every bag category (Backpacks, Tote Bags, Sling Bags, Laptop Bags, Trolley Bags).
-
-- Each color chip shows a small color dot, and the "Color:" label updates as you pick.
-- Photos live in `assets/img/variants/` and are named `<photo>-<color>.webp`
-  (e.g. `backpack1-navy.webp`, `kids-tote-sky-blue.webp`).
-- Product cards and category pages show the product's first listed color.
-- The cart shows the photo of the color that was added.
-- To add a new color: add it to the product's `colors` list in `assets/js/data.js`,
-  add its swatch to `COLOR_HEX` in `assets/js/app.js`, and drop the matching
-  `<photo>-<color>.webp` into `assets/img/variants/`.
+Product color dots use the built-in default color palette in `COLOR_HEX` in
+`assets/js/app.js`. Owners enter color names in inventory; no per-product hex
+values or color-specific photos are required. If a custom color name is added,
+add its swatch to `COLOR_HEX`; unknown names use a neutral gray swatch.
 
 ## What's New (Earlier Update)
 

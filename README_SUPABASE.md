@@ -26,8 +26,7 @@ I can't reach yours — step 5 below is your smoke test.
    continue to restrict customer and admin operations.
 10. Run `supabase/10_inventory_reviews.sql` to enable admin inventory/image management and customer product reviews.
     It creates the public product-image bucket and review table with RLS; only admins can upload or change products.
-11. Run `supabase/12_product_color_hex_codes.sql` to store custom hex colors for product swatches.
-12. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+11. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -89,8 +88,8 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
 - Customers can rate products from 1 to 5 stars and leave a comment on the product page. Each signed-in customer can submit
   one review per product; they can update their own review. The dashboard lists submitted feedback.
   Run `supabase/10_inventory_reviews.sql` before using inventory image uploads or customer reviews.
-- Owners can assign a six-digit hex color to each product color; the storefront swatch updates from that value.
-  Run `supabase/12_product_color_hex_codes.sql` before saving custom swatch colors.
+- Product color swatches use the built-in default colors in `assets/js/app.js`; owners only enter color names.
+  If you previously added a `color_hexes` column to Supabase, it is unused and can be left in place.
 - Admins can permanently delete orders from the owner dashboard after confirmation. Related order items are deleted too;
   inventory is not restored. Run `supabase/07_admin_delete_orders.sql` on existing projects to enable this feature.
   If the API reports a table permission error, apply `supabase/08_fix_admin_order_delete_permissions.sql`.

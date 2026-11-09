@@ -70,36 +70,12 @@
 
   var inventoryProducts = [];
   var currentProductImage = '';
-  var currentColorHexes = {};
   var previewObjectUrl = '';
 
   function productColors() {
     return document.getElementById('product-colors').value.split(',')
       .map(function (color) { return color.trim(); })
       .filter(Boolean);
-  }
-
-  function validHexColor(value) {
-    return /^#[0-9a-f]{6}$/i.test(value || '');
-  }
-
-  function renderColorHexFields() {
-    var container = document.getElementById('product-color-hexes');
-    var colors = productColors();
-    container.innerHTML = colors.length ? colors.map(function (color, index) {
-      var hex = savedProductColorHex(currentColorHexes, color) || productColorHex({}, color);
-      if (!validHexColor(hex)) hex = '#cccccc';
-      return '<div class="color-hex-row">' +
-        '<label for="color-hex-text-' + index + '">' + escapeHtml(color) + '</label>' +
-        '<input type="color" class="color-hex-picker" data-color="' + escapeHtml(color) +
-          '" aria-label="' + escapeHtml(color) + ' color picker" value="' + hex + '">' +
-        '<div><input type="text" class="color-hex-value" id="color-hex-text-' + index +
-          '" data-color="' + escapeHtml(color) + '" maxlength="7" pattern="#[0-9A-Fa-f]{6}" value="' + hex +
-          '" aria-label="' + escapeHtml(color) + ' hex code" required>' +
-          '<span class="color-swatch-preview" data-preview-color="' + escapeHtml(color) +
-          '" style="background-color:' + hex + '"></span></div>' +
-        '</div>';
-    }).join('') : '<p class="color-hex-empty">Enter one or more colors to set their hex colors.</p>';
   }
 
   function renderInventory(products) {
@@ -109,7 +85,7 @@
       var image = SSPH_DB.productImageUrl(product.image);
       var stock = Number(product.stock);
       var swatches = (product.colors || []).map(function (color) {
-        var hex = savedProductColorHex(product.color_hexes, color) || productColorHex({}, color);
+        var hex = productColorHex({}, color);
         return '<span class="color-swatch-preview" title="' + escapeHtml(color) +
           '" aria-label="' + escapeHtml(color) + '" style="background-color:' + hex + '"></span>';
       }).join('');
@@ -177,8 +153,6 @@
     document.getElementById('save-product').textContent = 'Add product';
     document.getElementById('cancel-product-edit').hidden = true;
     currentProductImage = '';
-    currentColorHexes = {};
-    renderColorHexFields();
     var preview = document.getElementById('product-image-preview');
     preview.hidden = true;
     preview.removeAttribute('src');
@@ -201,12 +175,10 @@
     document.getElementById('product-new').checked = !!product.is_new;
     document.getElementById('product-image').value = '';
     currentProductImage = product.image || '';
-    currentColorHexes = Object.assign({}, product.color_hexes || {});
     var preview = document.getElementById('product-image-preview');
     var imageUrl = SSPH_DB.productImageUrl(currentProductImage);
     preview.hidden = !imageUrl;
     if (imageUrl) preview.src = imageUrl;
-    renderColorHexFields();
     document.getElementById('product-form-title').textContent = 'Edit product';
     document.getElementById('save-product').textContent = 'Save changes';
     document.getElementById('cancel-product-edit').hidden = false;
@@ -350,30 +322,6 @@
     preview.hidden = false;
   });
 
-  document.getElementById('product-colors').addEventListener('input', renderColorHexFields);
-  document.getElementById('product-color-hexes').addEventListener('input', function (event) {
-    var input = event.target;
-    var color = input.dataset.color;
-    if (!color) return;
-    if (input.classList.contains('color-hex-picker')) {
-      currentColorHexes[color] = input.value;
-      var hexField = document.querySelector('.color-hex-value[data-color="' + CSS.escape(color) + '"]');
-      if (hexField) hexField.value = input.value;
-    } else if (input.classList.contains('color-hex-value')) {
-      currentColorHexes[color] = input.value;
-      var picker = document.querySelector('.color-hex-picker[data-color="' + CSS.escape(color) + '"]');
-      if (validHexColor(input.value)) {
-        if (picker) picker.value = input.value;
-      }
-    } else {
-      return;
-    }
-    var preview = document.querySelector('.color-swatch-preview[data-preview-color="' + CSS.escape(color) + '"]');
-    if (preview && validHexColor(currentColorHexes[color])) {
-      preview.style.backgroundColor = currentColorHexes[color];
-    }
-  });
-
   document.getElementById('cancel-product-edit').addEventListener('click', resetProductForm);
   document.getElementById('inventory-products').addEventListener('click', async function (event) {
     var editButton = event.target.closest('.edit-product');
@@ -408,12 +356,6 @@
     var file = document.getElementById('product-image').files[0];
     var imagePath = currentProductImage;
     var colors = productColors();
-    var colorHexes = {};
-    colors.forEach(function (color) {
-      var input = document.querySelector('.color-hex-value[data-color="' + CSS.escape(color) + '"]');
-      var hex = input ? input.value.trim() : currentColorHexes[color] || COLOR_HEX[color] || '#cccccc';
-      if (validHexColor(hex)) colorHexes[color] = hex.toLowerCase();
-    });
     var newlyUploadedImage = '';
     submit.disabled = true;
     showNotice(file ? 'Uploading product picture…' : 'Saving product…');
@@ -436,7 +378,6 @@
       price: document.getElementById('product-price').value,
       stock: document.getElementById('product-stock').value,
       colors: colors,
-      colorHexes: colorHexes,
       image: imagePath,
       featured: document.getElementById('product-featured').checked,
       isNew: document.getElementById('product-new').checked

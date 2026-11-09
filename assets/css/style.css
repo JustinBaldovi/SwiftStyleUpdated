@@ -420,7 +420,6 @@ img { max-width: 100%; display: block; }
 .product-detail-img img { display: block; width: 100%; }
 .color-options input:checked + span { font-weight: 700; }
 .color-options label:has(input:checked) { border-color: var(--purple); background: #fbe9c6; }
-.selected-color-preview { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; color: var(--gray); font-size: .88rem; font-weight: 700; }
 .qty-input { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
 .stock-note { color: var(--gray); font-size: .9rem; margin-bottom: 16px; }
 .product-reviews { margin-top: 48px; }
@@ -716,12 +715,7 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
 }
 .inventory-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
 .inventory-fields > div { min-width: 0; }
-.inventory-description, .inventory-image-field, .inventory-color-hexes { grid-column: 1 / -1; }
-.inventory-color-hexes > p { color: var(--gray); font-size: .88rem; margin: 4px 0 12px; }
-.color-hex-row { display: grid; grid-template-columns: minmax(110px, .7fr) 54px minmax(130px, .8fr); align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
-.color-hex-row > label { margin-top: 0; }
-.owner-form .color-hex-picker { width: 52px; height: 42px; padding: 3px; cursor: pointer; }
-.color-hex-row .color-hex-value { max-width: 160px; }
+.inventory-description, .inventory-image-field { grid-column: 1 / -1; }
 .color-swatch-preview { display: inline-block; width: 24px; height: 24px; border: 1px solid rgba(0,0,0,.25); border-radius: 50%; vertical-align: middle; }
 .inventory-color-swatches { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .inventory-color-swatches .color-swatch-preview { width: 15px; height: 15px; }
@@ -763,9 +757,7 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
   .owner-metric strong { font-size: 1.25rem; }
   .owner-metric small { font-size: .72rem; }
   .inventory-fields { grid-template-columns: 1fr; }
-  .inventory-description, .inventory-image-field, .inventory-color-hexes { grid-column: auto; }
-  .color-hex-row { grid-template-columns: minmax(90px, 1fr) 48px minmax(100px, 1fr); gap: 8px; }
-  .owner-form .color-hex-picker { width: 46px; }
+  .inventory-description, .inventory-image-field { grid-column: auto; }
 }
 
 /* ---------------- Customer order tracking ---------------- */

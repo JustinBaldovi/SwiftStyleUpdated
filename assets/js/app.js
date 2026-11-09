@@ -20,26 +20,8 @@ const COLOR_HEX = {
   'Blush': '#eec2c0', 'Taupe': '#9a8777', 'Yellow': '#f6c730', 'Sky Blue': '#6cc0ea',
   'Blue': '#2a62c8', 'Green': '#2f9d5a'
 };
-function normalizeColorName(color) {
-  return String(color || '').trim().replace(/\s+/g, ' ').toLowerCase();
-}
-function savedProductColorHex(colorHexes, color) {
-  const key = normalizeColorName(color);
-  if (!colorHexes || !key) return '';
-  const matchedKey = Object.keys(colorHexes).find(function (name) {
-    return normalizeColorName(name) === key;
-  });
-  const hex = matchedKey ? String(colorHexes[matchedKey]).trim() : '';
-  return /^#[0-9a-f]{6}$/i.test(hex) ? hex.toLowerCase() : '';
-}
 function productColorHex(product, color) {
-  const saved = savedProductColorHex(product.colorHexes, color);
-  if (saved) return saved;
-  const key = normalizeColorName(color);
-  const defaultName = Object.keys(COLOR_HEX).find(function (name) {
-    return normalizeColorName(name) === key;
-  });
-  return defaultName ? COLOR_HEX[defaultName] : '#cccccc';
+  return COLOR_HEX[color] || '#cccccc';
 }
 /* Use one product photo; the selected color is represented by its exact hex swatch. */
 function productImage(p) {

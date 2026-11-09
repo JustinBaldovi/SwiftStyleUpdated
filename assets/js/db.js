@@ -161,7 +161,6 @@
       price: Number(r.price), colors: r.colors || [], stock: r.stock,
       image: r.image && (r.image.indexOf('product-images/') === 0 || /^https?:\/\//i.test(r.image))
         ? productImageUrl(r.image) : r.image,
-      colorHexes: r.color_hexes || {},
       fit: r.image_fit === 'contain' ? 'contain' : undefined,
       featured: r.is_featured, isNew: r.is_new
     };
@@ -340,36 +339,16 @@
     if (new Set(colors.map(function (color) { return color.toLowerCase(); })).size !== colors.length) {
       return fail('Each product color must be unique.');
     }
-    var colorHexes = {};
-    for (var colorIndex = 0; colorIndex < colors.length; colorIndex += 1) {
-      var color = colors[colorIndex];
-      var matchedKey = Object.keys(p.colorHexes || {}).find(function (name) {
-        return String(name).trim().replace(/\s+/g, ' ').toLowerCase() ===
-          color.replace(/\s+/g, ' ').toLowerCase();
-      });
-      var assignedHex = matchedKey ? String(p.colorHexes[matchedKey] || '').trim() : '';
-      if (assignedHex) {
-        if (!/^#[0-9a-f]{6}$/i.test(assignedHex)) {
-          return fail('Enter a valid six-digit hex code for ' + color + '.');
-        }
-        colorHexes[color] = assignedHex.toLowerCase();
-      }
-    }
     var row = {
       category_id: categoryId, gender: p.gender, product_name: String(p.name).trim(), description: String(p.description || '').trim() || null,
-      price: price, colors: colors, color_hexes: colorHexes,
+      price: price, colors: colors,
       stock: stock, image: p.image || null, image_fit: p.fit === 'contain' ? 'contain' : 'cover',
       is_featured: !!p.featured, is_new: !!p.isNew
     };
     var r = p.id
       ? await sb.from('products').update(row).eq('product_id', p.id).select('product_id').maybeSingle()
       : await sb.from('products').insert(row).select('product_id').single();
-    if (r.error) {
-      if (/color_hexes.*schema cache|could not find.*color_hexes.*column/i.test(r.error.message || '')) {
-        return fail('Hex color support is not enabled in Supabase yet. Run supabase/12_product_color_hex_codes.sql in the SQL Editor, then reload this page.');
-      }
-      return fail(r.error);
-    }
+    if (r.error) return fail(r.error);
     return r.data ? ok(r.data) : fail('Product was not found or you do not have permission to change it.');
   }
   async function adminDeleteProduct(productId) {
