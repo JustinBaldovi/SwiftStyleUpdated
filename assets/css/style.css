@@ -483,6 +483,12 @@ body.auth-bg main::before {
 body.auth-bg main::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(255,255,255,.45); }
 .auth-page { width: 100%; max-width: 480px; margin: 0; }
 .auth-page .form-box { margin: 0; width: 100%; background: rgba(255,255,255,.9); }
+.login-access-qr { display: grid; justify-items: center; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; }
+.login-access-qr h3 { font-size: 1rem; }
+.login-access-qr p { color: var(--gray); font-size: .82rem; }
+.login-access-qr-code { display: inline-flex; min-width: 160px; min-height: 160px; align-items: center; justify-content: center; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+.login-access-qr-code img, .login-access-qr-code canvas { display: block; max-width: 100%; height: auto; }
+.login-access-qr-error { color: var(--danger) !important; }
 @media (max-width: 860px) { body.auth-bg main { justify-content: center; padding: 24px 16px; } }
 /* phones: show the whole photo above the form instead of hiding it behind it */
 @media (max-width: 600px) {

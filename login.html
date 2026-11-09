@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="assets/js/supabase-config.js"></script>
 <script src="assets/js/db.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="auth-bg">
 
@@ -33,6 +34,15 @@
     </form>
     <div id="social-login"></div>
     <p class="form-note">Don't have an account yet? <a href="register.html">Sign Up</a></p>
+    <section class="login-access-qr" aria-labelledby="login-access-qr-title">
+      <div>
+        <h3 id="login-access-qr-title">Open Swift Style PH on your phone</h3>
+        <p>Scan this code with your phone camera to visit the store.</p>
+      </div>
+      <div class="login-access-qr-code" id="login-access-qr-code" role="img" aria-label="QR code to open the Swift Style PH login page"></div>
+      <button type="button" class="btn btn-secondary btn-small" id="download-login-qr" disabled>Download QR code</button>
+      <p class="login-access-qr-error" id="login-access-qr-error" role="status" hidden></p>
+    </section>
   </div>
   </div>
 </main>
@@ -60,6 +70,35 @@
     }
   });
   renderSocialButtons('social-login', 'login');
+  (function () {
+    var code = document.getElementById('login-access-qr-code');
+    var download = document.getElementById('download-login-qr');
+    var error = document.getElementById('login-access-qr-error');
+    if (typeof QRCode === 'undefined') {
+      error.textContent = 'QR code unavailable. Please check your internet connection and reload.';
+      error.hidden = false;
+      return;
+    }
+
+    var loginUrl = new URL('login.html', window.location.href).href;
+    new QRCode(code, { text: loginUrl, width: 144, height: 144, correctLevel: QRCode.CorrectLevel.M });
+    download.disabled = false;
+    download.addEventListener('click', function () {
+      var canvas = code.querySelector('canvas');
+      var image = code.querySelector('img');
+      var imageUrl = canvas ? canvas.toDataURL('image/png') : (image ? image.src : '');
+      if (!imageUrl) {
+        error.textContent = 'QR code is not ready to download. Please reload and try again.';
+        error.hidden = false;
+        return;
+      }
+
+      var link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'swift-style-ph-access-qr.png';
+      link.click();
+    });
+  })();
 </script>
 </body>
 </html>
