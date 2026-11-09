@@ -114,6 +114,22 @@
     download.disabled = false;
   }
 
+  function renderWebsiteQr() {
+    var preview = document.getElementById('website-qr-preview');
+    var download = document.getElementById('download-website-qr');
+    preview.replaceChildren();
+    download.disabled = true;
+    if (typeof QRCode === 'undefined') {
+      var error = document.createElement('p');
+      error.textContent = 'The QR generator could not load. Check your internet connection and reload.';
+      preview.appendChild(error);
+      return;
+    }
+    var storeUrl = new URL('index.html', window.location.href).href;
+    new QRCode(preview, { text: storeUrl, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    download.disabled = false;
+  }
+
   async function loadOwner() {
     if (!(await SSPH_DB.requireSession('login.html?redirect=owner.html'))) return;
     var profile = await SSPH_DB.getProfile();
@@ -128,6 +144,7 @@
       return;
     }
 
+    renderWebsiteQr();
     document.getElementById('profile-name').value = profile.data.full_name || '';
     document.getElementById('profile-email').value = profile.data.email || '';
     document.getElementById('profile-phone').value = profile.data.phone || '';
@@ -228,6 +245,21 @@
     var link = document.createElement('a');
     link.href = url;
     link.download = 'swift-style-payment-qr.png';
+    link.click();
+  });
+
+  document.getElementById('download-website-qr').addEventListener('click', function () {
+    var preview = document.getElementById('website-qr-preview');
+    var canvas = preview.querySelector('canvas');
+    var image = preview.querySelector('img');
+    var url = canvas ? canvas.toDataURL('image/png') : (image ? image.src : '');
+    if (!url) {
+      showNotice('Website QR image is not ready to download.', true);
+      return;
+    }
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'swift-style-website-qr.png';
     link.click();
   });
 
