@@ -85,6 +85,14 @@
     showNotice('Updated ' + new Date().toLocaleTimeString());
   }
 
+  var refreshTimer;
+  function scheduleRefresh() {
+    window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(function () {
+      if (!document.hidden) refreshDashboard(false);
+    }, 150);
+  }
+
   function renderQr(payload) {
     var preview = document.getElementById('qr-preview');
     var download = document.getElementById('download-qr');
@@ -134,6 +142,15 @@
     }
     await refreshDashboard(false);
     if (!qr.ok) showNotice('Could not load the payment QR setting. Run supabase/04_owner_dashboard.sql.', true);
+    var subscription = await SSPH_DB.watchOrders(true, scheduleRefresh, function (status, error) {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        showNotice('Live order updates disconnected. Reconnecting…' + (error ? ' ' + error : ''), true);
+      } else if (status === 'SUBSCRIBED') {
+        showNotice('Live order updates connected.');
+        scheduleRefresh();
+      }
+    });
+    if (!subscription.ok) showNotice('Live order updates unavailable: ' + subscription.error, true);
   }
 
   document.querySelectorAll('.owner-tab').forEach(function (button) {
@@ -218,4 +235,7 @@
   window.setInterval(function () {
     if (!document.hidden) refreshDashboard(false);
   }, 30000);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) refreshDashboard(false);
+  });
 })();

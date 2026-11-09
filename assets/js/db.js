@@ -242,6 +242,18 @@
     if (r.error) return fail(r.error);
     return r.data ? ok(r.data) : fail('Order not found.');
   }
+  async function watchOrders(isOwner, onChange, onStatus) {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Not signed in.');
+    var userId = session.data.session.user.id;
+    var filter = { event: '*', schema: 'public', table: 'orders' };
+    if (!isOwner) filter.filter = 'user_id=eq.' + userId;
+    var channel = sb.channel('orders-' + (isOwner ? 'owner-' : 'customer-') + userId)
+      .on('postgres_changes', filter, onChange)
+      .subscribe(onStatus);
+    return ok(channel);
+  }
 
   /* ---------------------------------------------------------------
      ADMIN  (the database refuses all of these unless profiles.role = 'admin')
@@ -306,7 +318,7 @@
     signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, updateProfile: updateProfile, requireSession: requireSession,
     loadCatalog: loadCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
-    placeOrder: placeOrder, myOrders: myOrders, getOrder: getOrder,
+    placeOrder: placeOrder, myOrders: myOrders, getOrder: getOrder, watchOrders: watchOrders,
     adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus,
     adminGetPaymentQr: adminGetPaymentQr, adminSavePaymentQr: adminSavePaymentQr,
     adminListProducts: adminListProducts, adminSaveProduct: adminSaveProduct, adminDeleteProduct: adminDeleteProduct,

@@ -561,3 +561,31 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
   .owner-metric strong { font-size: 1.25rem; }
   .owner-metric small { font-size: .72rem; }
 }
+
+/* ---------------- Customer order tracking ---------------- */
+.customer-orders-page { min-height: 60vh; padding-top: 40px; padding-bottom: 64px; }
+.customer-orders-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.customer-orders-heading h1 { font-size: 2rem; }
+.customer-orders-heading p:not(.owner-eyebrow) { color: var(--gray); margin-top: 4px; }
+.live-indicator { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 8px 13px; background: #f3f0e9; color: var(--gray); font-size: .82rem; font-weight: 700; white-space: nowrap; }
+.live-indicator::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.live-indicator.connected { background: #e3f7ea; color: #28643b; }
+.live-indicator.disconnected { background: #fff2d6; color: #82530a; }
+.customer-orders-list { display: grid; gap: 16px; }
+.customer-order-card, .customer-order-empty { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 22px; box-shadow: 0 8px 24px rgba(58,36,16,.06); }
+.customer-order-card > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.customer-order-number { font-weight: 800; font-size: 1.05rem; }
+.customer-order-card time { display: block; color: var(--gray); font-size: .82rem; margin-top: 3px; }
+.customer-order-items { margin: 18px 0; border-top: 1px solid #f2e8cc; border-bottom: 1px solid #f2e8cc; padding: 12px 0; }
+.customer-order-items li { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; }
+.customer-order-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.customer-order-meta span { color: var(--gray); overflow-wrap: anywhere; }
+.customer-order-empty { text-align: center; padding: 48px 20px; }
+.customer-order-empty p { color: var(--gray); margin: 6px 0 18px; }
+@media (max-width: 600px) {
+  .customer-orders-page { padding-top: 26px; }
+  .customer-orders-heading { align-items: flex-start; flex-direction: column; }
+  .customer-orders-heading h1 { font-size: 1.65rem; }
+  .customer-order-card, .customer-order-empty { padding: 16px; }
+  .customer-order-meta { flex-direction: column; }
+}

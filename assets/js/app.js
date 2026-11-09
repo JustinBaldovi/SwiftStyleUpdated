@@ -237,6 +237,7 @@ function renderHeader() {
       <nav class="main-nav">
         <a href="index.html">Home</a>
         <a href="shop.html">Shop</a>
+        <a href="orders.html">My Orders</a>
         ${user.role === 'admin' ? '<a href="owner.html">Owner</a>' : ''}
         <div class="dropdown">
           <span>Categories ▾</span>
