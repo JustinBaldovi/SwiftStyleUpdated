@@ -275,6 +275,12 @@
     var r = await sb.from('orders').update({ order_status: status }).eq('order_id', orderId);
     return r.error ? fail(r.error) : ok(true);
   }
+  async function adminDeleteOrder(orderId) {
+    if (!Number.isSafeInteger(orderId) || orderId < 1) return fail('Invalid order ID.');
+    var r = await sb.from('orders').delete().eq('order_id', orderId).select('order_id').maybeSingle();
+    if (r.error) return fail(r.error);
+    return r.data ? ok(true) : fail('Order not found or you do not have permission to delete it.');
+  }
   async function adminGetPaymentQr() {
     var r = await sb.from('store_settings').select('value')
       .eq('setting_key', 'payment_qr_payload').maybeSingle();
@@ -319,7 +325,7 @@
     loadCatalog: loadCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
     placeOrder: placeOrder, myOrders: myOrders, getOrder: getOrder, watchOrders: watchOrders,
-    adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus,
+    adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus, adminDeleteOrder: adminDeleteOrder,
     adminGetPaymentQr: adminGetPaymentQr, adminSavePaymentQr: adminSavePaymentQr,
     adminListProducts: adminListProducts, adminSaveProduct: adminSaveProduct, adminDeleteProduct: adminDeleteProduct,
     PAYMENT_METHODS: PAYMENT_METHODS, ORDER_STATUSES: ORDER_STATUSES

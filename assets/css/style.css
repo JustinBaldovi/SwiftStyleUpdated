@@ -536,6 +536,8 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
 .status-completed { background: #e3f7ea; color: #28643b; }
 .status-cancelled { background: #fce8e8; color: #a42b2b; }
 .owner-status-editor { display: flex; flex-wrap: wrap; gap: 7px; }
+.delete-order { border-color: var(--danger); color: var(--danger); }
+.delete-order:hover { background: var(--danger); color: #fff; }
 .owner-status-editor select, .owner-form input, .owner-form textarea {
   width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--dark); font: inherit; background: #fff;
 }

@@ -59,7 +59,10 @@
         '<td>' + escapeHtml(order.payment_method) + '</td>' +
         '<td><strong>' + formatPrice(order.total_amount) + '</strong></td>' +
         '<td><div class="owner-status-editor"><select class="order-status" data-order-id="' + Number(order.order_id) + '">' + options + '</select>' +
-          '<button type="button" class="btn btn-small save-status" data-order-id="' + Number(order.order_id) + '">Save</button></div>' +
+          '<button type="button" class="btn btn-small save-status" data-order-id="' + Number(order.order_id) + '">Save</button>' +
+          '<button type="button" class="btn btn-small delete-order" data-order-id="' + Number(order.order_id) +
+            '" aria-label="Delete order #' + escapeHtml(String(order.order_id).padStart(6, '0')) +
+            '" title="Permanently delete order">🗑 Delete</button></div>' +
           '<span class="status-feedback" data-feedback-id="' + Number(order.order_id) + '"></span></td>' +
         '</tr>';
     }).join('');
@@ -171,9 +174,31 @@
   });
 
   document.getElementById('all-orders').addEventListener('click', async function (event) {
-    var button = event.target.closest('.save-status');
+    var button = event.target.closest('.save-status, .delete-order');
     if (!button) return;
     var orderId = Number(button.dataset.orderId);
+    if (button.classList.contains('delete-order')) {
+      var orderLabel = '#' + String(orderId).padStart(6, '0');
+      if (!window.confirm(
+        'Permanently delete order ' + orderLabel + ' and its order items? This cannot be undone. Inventory will not be restored.'
+      )) return;
+
+      var deleteFeedback = document.querySelector('[data-feedback-id="' + orderId + '"]');
+      button.disabled = true;
+      deleteFeedback.textContent = 'Deleting…';
+      deleteFeedback.className = 'status-feedback';
+      var deleteResult = await SSPH_DB.adminDeleteOrder(orderId);
+      if (!deleteResult.ok) {
+        button.disabled = false;
+        deleteFeedback.textContent = deleteResult.error;
+        deleteFeedback.className = 'status-feedback error';
+        return;
+      }
+      showNotice('Order ' + orderLabel + ' deleted.');
+      await refreshDashboard(false);
+      return;
+    }
+
     var select = document.querySelector('.order-status[data-order-id="' + orderId + '"]');
     var feedback = document.querySelector('[data-feedback-id="' + orderId + '"]');
     button.disabled = true;
