@@ -21,7 +21,10 @@ I can't reach yours — step 5 below is your smoke test.
 7. Run `supabase/05_realtime_orders.sql` to publish order changes to Supabase Realtime.
 8. Run `supabase/07_admin_delete_orders.sql` to enable admin-only order deletion from the dashboard.
    If Supabase reports `permission denied for table orders`, run `supabase/08_fix_admin_order_delete_permissions.sql`.
-9. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+9. Optional: run `supabase/09_authenticated_permissions_with_rls.sql` to reset app-table grants for signed-in users
+   while keeping row-level security enabled. It does not grant access to anonymous users; existing RLS policies
+   continue to restrict customer and admin operations.
+10. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
