@@ -240,7 +240,76 @@ const BACKGROUND_MUSIC_KEY = 'ssph_background_music';
 const BACKGROUND_VOLUME_KEY = 'ssph_background_volume';
 const BACKGROUND_TIME_KEY = 'ssph_background_time';
 
+function postMusicMessage(type, value) {
+  window.parent.postMessage({ source: 'ssph-music', type: type, value: value }, location.origin);
+}
+
 function getBackgroundMusic() {
+  if (window.parent !== window && window.frameElement &&
+      window.frameElement.classList.contains('ssph-music-frame')) {
+    if (window.ssphBackgroundMusic) return window.ssphBackgroundMusic;
+    const listeners = { play: [], pause: [], error: [] };
+    let syncingState = false;
+    const music = {
+      paused: true,
+      currentTime: 0,
+      _volume: 0.2,
+      addEventListener: function (type, callback) {
+        if (listeners[type]) listeners[type].push(callback);
+      },
+      play: function () {
+        music.paused = false;
+        listeners.play.forEach(function (callback) { callback(); });
+        postMusicMessage('play');
+        return Promise.resolve();
+      },
+      pause: function () {
+        music.paused = true;
+        listeners.pause.forEach(function (callback) { callback(); });
+        postMusicMessage('pause');
+      }
+    };
+    Object.defineProperty(music, 'volume', {
+      get: function () { return music._volume; },
+      set: function (value) {
+        music._volume = Number(value);
+        if (!syncingState) postMusicMessage('volume', music._volume);
+      }
+    });
+    window.addEventListener('message', function (event) {
+      if (event.source !== window.parent || event.origin !== location.origin ||
+          !event.data || event.data.source !== 'ssph-music' || event.data.type !== 'state') return;
+      const state = event.data.value;
+      music.currentTime = state.currentTime;
+      syncingState = true;
+      music.volume = state.volume;
+      syncingState = false;
+      if (music.paused !== state.paused) {
+        music.paused = state.paused;
+        (state.paused ? listeners.pause : listeners.play).forEach(function (callback) { callback(); });
+      } else if (window.ssphUpdateMusicControl) {
+        window.ssphUpdateMusicControl();
+      }
+    });
+    window.ssphBackgroundMusic = music;
+    window.ssphResumeBackgroundMusic = function () {
+      try {
+        if (localStorage.getItem(BACKGROUND_MUSIC_KEY) === '1') postMusicMessage('resume');
+      } catch (error) {
+        console.warn('[Music] Could not read playback preference:', error);
+      }
+    };
+    document.addEventListener('pointerdown', function (event) {
+      if (event.isTrusted && !(event.target.closest && event.target.closest('.music-toggle'))) {
+        window.ssphResumeBackgroundMusic();
+      }
+    }, true);
+    document.addEventListener('keydown', function (event) {
+      if (event.isTrusted) window.ssphResumeBackgroundMusic();
+    }, true);
+    postMusicMessage('state-request');
+    return music;
+  }
   if (window.ssphBackgroundMusic) return window.ssphBackgroundMusic;
   const audio = document.createElement('audio');
   audio.src = 'assets/audio/store-background.mp3';
@@ -289,6 +358,7 @@ function getBackgroundMusic() {
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) window.ssphResumeBackgroundMusic();
   });
+  installPersistentMusicNavigation(audio);
   try {
     const savedVolumeValue = localStorage.getItem(BACKGROUND_VOLUME_KEY);
     const savedVolume = savedVolumeValue === null ? NaN : Number(savedVolumeValue);
@@ -305,6 +375,126 @@ function getBackgroundMusic() {
     console.warn('[Music] Could not restore playback preferences:', error);
   }
   return audio;
+}
+
+function installPersistentMusicNavigation(audio) {
+  if (window.ssphMusicNavigationInstalled) return;
+  window.ssphMusicNavigationInstalled = true;
+  let frame = null;
+
+  function isMusicEnabled() {
+    try {
+      return localStorage.getItem(BACKGROUND_MUSIC_KEY) === '1';
+    } catch (error) {
+      console.warn('[Music] Could not read playback preference:', error);
+      return !audio.paused;
+    }
+  }
+
+  function sendState(target) {
+    target.postMessage({
+      source: 'ssph-music',
+      type: 'state',
+      value: {
+        paused: audio.paused,
+        volume: audio.volume,
+        currentTime: audio.currentTime || 0
+      }
+    }, location.origin);
+  }
+
+  function setVolume(value) {
+    const volume = Number(value);
+    if (!Number.isFinite(volume) || volume < 0 || volume > 1) return;
+    audio.volume = volume;
+    saveBackgroundMusicPreference(BACKGROUND_VOLUME_KEY, volume);
+  }
+
+  function handleMusicMessage(event) {
+    if (!frame || event.origin !== location.origin || event.source !== frame.contentWindow ||
+        !event.data || event.data.source !== 'ssph-music') return;
+    if (event.data.type === 'state-request') {
+      sendState(frame.contentWindow);
+    } else if (event.data.type === 'play' || event.data.type === 'resume') {
+      const shouldPlay = event.data.type === 'play' || isMusicEnabled();
+      if (event.data.type === 'play') saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '1');
+      if (shouldPlay && audio.paused) {
+        audio.play().catch(function (error) {
+          console.info('[Music] Playback could not resume:', error);
+          if (frame) sendState(frame.contentWindow);
+        });
+      }
+    } else if (event.data.type === 'pause') {
+      saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '0');
+      audio.pause();
+    } else if (event.data.type === 'volume') {
+      setVolume(event.data.value);
+    }
+    sendState(frame.contentWindow);
+  }
+
+  audio.addEventListener('play', function () {
+    if (frame) sendState(frame.contentWindow);
+  });
+  audio.addEventListener('pause', function () {
+    if (frame) sendState(frame.contentWindow);
+  });
+
+  function syncFrameLocation() {
+    if (!frame) return;
+    try {
+      const next = new URL(frame.contentWindow.location.href);
+      if (next.origin !== location.origin) return;
+      const current = location.pathname + location.search + location.hash;
+      const destination = next.pathname + next.search + next.hash;
+      if (destination !== current) history.pushState({ ssphMusicFrame: true }, '', destination);
+      if (frame.contentDocument.title) document.title = frame.contentDocument.title;
+      sendState(frame.contentWindow);
+    } catch (error) {
+      console.warn('[Navigation] Could not sync the page address:', error);
+    }
+  }
+
+  function startPersistentNavigation(destination) {
+    frame = document.createElement('iframe');
+    frame.className = 'ssph-music-frame';
+    frame.title = 'Swift Style PH';
+    frame.addEventListener('load', syncFrameLocation);
+    window.addEventListener('message', handleMusicMessage);
+    window.ssphMusicFrame = frame;
+    document.body.classList.add('ssph-music-shell');
+    document.body.appendChild(frame);
+    frame.src = destination.href;
+  }
+
+  document.addEventListener('click', function (event) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey ||
+        event.shiftKey || event.altKey || !isMusicEnabled()) return;
+    const anchor = event.target.closest && event.target.closest('a[href]');
+    if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
+    const destination = new URL(anchor.href, location.href);
+    if (destination.origin !== location.origin ||
+        !/\.html$/i.test(destination.pathname) ||
+        (destination.pathname === location.pathname && destination.search === location.search)) return;
+    event.preventDefault();
+    if (window.ssphResumeBackgroundMusic) window.ssphResumeBackgroundMusic();
+    if (frame) {
+      frame.contentWindow.location.href = destination.href;
+      return;
+    }
+    startPersistentNavigation(destination);
+  }, true);
+
+  window.addEventListener('popstate', function () {
+    if (!frame) return;
+    try {
+      if (frame.contentWindow.location.href !== location.href) {
+        frame.contentWindow.location.href = location.href;
+      }
+    } catch (error) {
+      console.warn('[Navigation] Could not restore the previous page:', error);
+    }
+  });
 }
 
 function saveBackgroundMusicPreference(key, value) {

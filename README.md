@@ -64,9 +64,11 @@ add its swatch to `COLOR_HEX`; unknown names use a neutral gray swatch.
 ## Background music
 
 The supplied store theme is available from the music button directly below
-Home in the navigation. Press the button to play or pause; adjust the volume
-with the slider. Browsers require a user gesture before playing audio. Volume,
-play preference, and playback position are remembered between page changes.
+Cart in the navigation. Press the button to play or pause; adjust the volume
+with the slider. Browsers require a user gesture before playing audio. When
+music is enabled, internal page navigation keeps the player alive while the
+address bar and browser back/forward navigation continue to work. Volume, play
+preference, and playback position are remembered.
 
 ## What's New (Earlier Update)
 
