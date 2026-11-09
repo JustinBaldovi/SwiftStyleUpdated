@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section container">
+    <h1 class="section-title">Checkout</h1>
+    <div id="checkout-content"></div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  appReady(async function () {
+    const content = document.getElementById('checkout-content');
+    const res = await SSPH_DB.cartList();
+    const cart = res.ok ? res.data.filter(i => getProductById(i.productId)) : [];
+
+    if (!cart.length) {
+      window.location.href = 'cart.html';
+      return;
+    }
+
+    const user = getCurrentUser() || {};
+    const total = cart.reduce((sum, i) => sum + getProductById(i.productId).price * i.qty, 0);
+
+    const summaryLines = cart.map(item => {
+      const p = getProductById(item.productId);
+      return `<div class="line"><span>${escapeHtml(p.name)}${item.color ? ' (' + escapeHtml(item.color) + ')' : ''} × ${item.qty}</span><span>${formatPrice(p.price * item.qty)}</span></div>`;
+    }).join('');
+
+    content.innerHTML = `
+      <form id="checkout-form">
+        <div class="checkout-layout">
+          <div>
+            <div class="form-box" style="margin:0 0 24px;">
+              <h2 style="text-align:left; font-size:1.3rem;">Shipping Information</h2>
+              <p id="checkout-error" style="color:var(--danger); margin-bottom:12px; display:none;"></p>
+              <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" value="${escapeHtml(user.fullName || '')}" required>
+              </div>
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" value="${escapeHtml(user.email || '')}" required>
+              </div>
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" value="${escapeHtml(user.phone || '')}" placeholder="09XXXXXXXXX" required>
+              </div>
+              <div class="form-group">
+                <label for="address">Complete Address</label>
+                <textarea id="address" rows="3" required>${escapeHtml(user.address || '')}</textarea>
+              </div>
+            </div>
+
+            <div class="form-box" style="margin:0;">
+              <h2 style="text-align:left; font-size:1.3rem;">Payment Method</h2>
+              <div class="payment-options">
+                <label><input type="radio" name="payment_method" value="COD" checked><span>💵 Cash on Delivery (COD)</span></label>
+                <label><input type="radio" name="payment_method" value="GCash"><span>📱 GCash</span></label>
+                <label><input type="radio" name="payment_method" value="Credit/Debit Card"><span>💳 Credit / Debit Card</span></label>
+                <label><input type="radio" name="payment_method" value="Bank Transfer"><span>🏦 Bank Transfer</span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-summary-box">
+            <h2 style="font-size:1.3rem; margin-bottom:16px;">Order Summary</h2>
+            ${summaryLines}
+            <hr style="margin:14px 0; border-color:var(--border);">
+            <div class="line"><span>Subtotal</span><span>${formatPrice(total)}</span></div>
+            <div class="line"><span>Shipping Fee</span><span>${formatPrice(0)}</span></div>
+            <div class="line total" style="font-weight:800; font-size:1.15rem; margin-top:10px;">
+              <span>Total</span><span>${formatPrice(total)}</span>
+            </div>
+            <button type="submit" id="place-btn" class="btn btn-block" style="margin-top:20px;">Place Order</button>
+          </div>
+        </div>
+      </form>`;
+
+    document.getElementById('checkout-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById('place-btn');
+      const errEl = document.getElementById('checkout-error');
+      btn.disabled = true;
+      errEl.style.display = 'none';
+      // The database re-reads the cart, uses its own prices, checks stock and deducts it — all in one step.
+      const r = await SSPH_DB.placeOrder({
+        fullName: document.getElementById('full_name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        paymentMethod: document.querySelector('input[name="payment_method"]:checked').value
+      });
+      if (r.ok) {
+        window.location.href = 'order-success.html?order_id=' + r.data;
+      } else {
+        errEl.textContent = r.error;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        window.scrollTo(0, 0);
+      }
+    });
+  });
+</script>
+</body>
+</html>

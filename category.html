@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Category | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section container">
+    <h1 class="section-title" id="category-heading">Category</h1>
+    <p id="gender-note" style="text-align:center; margin-top:-16px; margin-bottom:28px; display:none;">
+      <a href="index.html" style="color:var(--purple); font-weight:600;">&larr; Back to Home</a>
+      &nbsp;|&nbsp; Browsing: <strong id="gender-label"></strong>
+    </p>
+
+    <form id="sort-form" style="display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap; justify-content:flex-end;">
+      <select id="sort-select" style="padding:12px 14px; border:1px solid var(--border); border-radius:8px;">
+        <option value="newest">Newest</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="name">Name A-Z</option>
+      </select>
+    </form>
+
+    <div class="shop-layout">
+      <aside class="filter-box">
+        <h4 id="sidebar-heading">Categories</h4>
+        <div id="category-links"></div>
+      </aside>
+      <div>
+        <div class="product-grid" id="category-grid"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  appReady(function () {
+    const slug = qs('slug');
+    const gender = validGender(qs('gender'));
+    const category = getCategoryBySlug(slug);
+  
+    if (!category) {
+      window.location.href = 'shop.html';
+    } else {
+      const headingText = gender ? gender + "'s " + category.name : category.name;
+      document.getElementById('page-title').textContent = headingText + ' | Swift Style PH';
+      document.getElementById('category-heading').innerHTML = gender
+        ? gender + "'s <span>" + category.name + '</span>'
+        : category.name;
+  
+      if (gender) {
+        document.getElementById('gender-note').style.display = 'block';
+        document.getElementById('gender-label').textContent = gender;
+        document.getElementById('sidebar-heading').textContent = gender + "'s Categories";
+        const genderKey = gender.toLowerCase();
+        document.getElementById('category-links').innerHTML = SUBCATS_BY_GENDER[genderKey].map(function (c) {
+          return '<a href="category.html?gender=' + genderKey + '&slug=' + c.slug + '" class="' +
+            (c.slug === slug ? 'active' : '') + '">' + c.name + '</a>';
+        }).join('');
+      } else {
+        document.getElementById('category-links').innerHTML = '<a href="shop.html">All Bags</a>' +
+          CATEGORIES.map(function (c) {
+            return '<a href="category.html?slug=' + c.slug + '" class="' +
+              (c.id === category.id ? 'active' : '') + '">' + c.name + '</a>';
+          }).join('');
+      }
+  
+      function getFiltered() {
+        let list = PRODUCTS.filter(p => p.categoryId === category.id);
+        if (gender) list = list.filter(p => p.gender === gender);
+        return list;
+      }
+  
+      function applySort() {
+        const sort = document.getElementById('sort-select').value;
+        const list = sortProducts(getFiltered(), sort);
+        if (!list.length) {
+          document.getElementById('category-grid').innerHTML =
+            '<p class="empty-state">No ' + (gender ? gender.toLowerCase() + "'s " : '') + 'bags available in this category yet.</p>';
+        } else {
+          renderProductGrid('category-grid', list);
+        }
+      }
+  
+      document.getElementById('sort-select').addEventListener('change', applySort);
+      applySort();
+    }
+  });
+</script>
+</body>
+</html>

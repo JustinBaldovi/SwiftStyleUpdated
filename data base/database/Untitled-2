@@ -1,0 +1,1353 @@
+/* =========================================
+   GOOGLE FONT
+========================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+
+/* =========================================
+   RESET
+========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+/* =========================================
+   COLOR VARIABLES
+   DEFAULT: NAVY + GREEN
+========================================= */
+
+:root {
+
+    --navy: #102a43;
+    --navy-light: #243b53;
+
+    --green: #3d7a5a;
+    --green-light: #e8f2ec;
+
+    --background: #f7f8f6;
+
+    --white: #ffffff;
+
+    --text: #1f2933;
+
+    --soft-text: #6b7280;
+
+    --accent: #3d7a5a;
+
+}
+
+
+/* =========================================
+   BODY
+========================================= */
+
+body {
+
+    font-family: "DM Sans", sans-serif;
+
+    background:
+        linear-gradient(
+            135deg,
+            #eef4f1,
+            #f8faf9
+        );
+
+    color: var(--text);
+
+    min-height: 100vh;
+
+}
+
+
+/* HIDE RADIO BUTTONS */
+
+body > input[type="radio"] {
+
+    position: absolute;
+
+    opacity: 0;
+
+}
+
+
+/* =========================================
+   MAIN WEBSITE
+========================================= */
+
+.website {
+
+    width: min(1100px, 92%);
+
+    margin: 40px auto;
+
+    background: rgba(255, 255, 255, 0.75);
+
+    border: 1px solid rgba(16, 42, 67, 0.08);
+
+    border-radius: 30px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 20px 60px rgba(16, 42, 67, 0.08);
+
+}
+
+
+/* =========================================
+   HERO SECTION
+========================================= */
+
+.hero {
+
+    min-height: 300px;
+
+    padding: 50px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--navy),
+            #183f5f
+        );
+
+    color: white;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+.hero::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 300px;
+
+    height: 300px;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(255,255,255,0.1);
+
+    right: -100px;
+
+    top: -100px;
+
+}
+
+
+.logo {
+
+    font-size: 0.8rem;
+
+    letter-spacing: 3px;
+
+    font-weight: 700;
+
+    margin-bottom: 45px;
+
+}
+
+
+.logo span {
+
+    color: #72b38c;
+
+}
+
+
+.hero-text {
+
+    max-width: 650px;
+
+}
+
+
+.small-title {
+
+    color: #9ed1b1;
+
+    font-size: 0.75rem;
+
+    letter-spacing: 3px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.hero h1 {
+
+    font-family: "Playfair Display", serif;
+
+    font-size: clamp(2.5rem, 6vw, 4.8rem);
+
+    line-height: 1;
+
+    margin-bottom: 20px;
+
+}
+
+
+.hero-text > p:last-child {
+
+    color: rgba(255,255,255,0.75);
+
+    max-width: 550px;
+
+    line-height: 1.7;
+
+}
+
+
+/* =========================================
+   DECORATIONS
+========================================= */
+
+.decorations {
+
+    position: absolute;
+
+    right: 60px;
+
+    bottom: 40px;
+
+    font-size: 4rem;
+
+    animation: float 4s ease-in-out infinite;
+
+}
+
+
+.decorations span {
+
+    display: none;
+
+}
+
+
+@keyframes float {
+
+    0%, 100% {
+
+        transform: translateY(0);
+
+    }
+
+    50% {
+
+        transform: translateY(-12px);
+
+    }
+
+}
+
+
+/* =========================================
+   MONTH NAVIGATION
+========================================= */
+
+.month-navigation {
+
+    display: flex;
+
+    gap: 8px;
+
+    padding: 20px;
+
+    overflow-x: auto;
+
+    background: white;
+
+    border-bottom:
+        1px solid rgba(16,42,67,0.08);
+
+}
+
+
+.month-navigation label {
+
+    min-width: 62px;
+
+    padding: 10px 12px;
+
+    text-align: center;
+
+    font-size: 0.72rem;
+
+    letter-spacing: 1px;
+
+    font-weight: 700;
+
+    color: var(--soft-text);
+
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    transition: 0.25s ease;
+
+}
+
+
+.month-navigation label:hover {
+
+    background: var(--green-light);
+
+    color: var(--green);
+
+    transform: translateY(-2px);
+
+}
+
+
+/* =========================================
+   MONTH CONTENT
+========================================= */
+
+.month-content {
+
+    display: none;
+
+    padding: 50px;
+
+}
+
+
+.month-introduction {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 30px;
+
+    margin-bottom: 40px;
+
+}
+
+
+.month-number {
+
+    color: var(--accent);
+
+    letter-spacing: 3px;
+
+    font-size: 0.75rem;
+
+    font-weight: 700;
+
+    margin-bottom: 10px;
+
+}
+
+
+.month-introduction h2 {
+
+    font-family: "Playfair Display", serif;
+
+    font-size: clamp(2.5rem, 5vw, 4rem);
+
+    color: var(--navy);
+
+    margin-bottom: 12px;
+
+}
+
+
+.month-introduction p {
+
+    color: var(--soft-text);
+
+    line-height: 1.7;
+
+    max-width: 600px;
+
+}
+
+
+.theme-badge {
+
+    background: var(--green-light);
+
+    color: var(--accent);
+
+    padding: 12px 18px;
+
+    border-radius: 50px;
+
+    font-size: 0.75rem;
+
+    letter-spacing: 1px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+}
+
+
+/* =========================================
+   CALENDAR + PLANNER
+========================================= */
+
+.calendar-and-planner {
+
+    display: grid;
+
+    grid-template-columns: 1.2fr 0.8fr;
+
+    gap: 25px;
+
+}
+
+
+.calendar-card,
+.planner-card {
+
+    background: white;
+
+    border-radius: 24px;
+
+    padding: 30px;
+
+    border:
+        1px solid rgba(16,42,67,0.08);
+
+}
+
+
+.calendar-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 25px;
+
+}
+
+
+.calendar-header h3 {
+
+    font-family: "Playfair Display", serif;
+
+    font-size: 1.5rem;
+
+    color: var(--navy);
+
+}
+
+
+.calendar-header span {
+
+    font-size: 1.8rem;
+
+}
+
+
+/* =========================================
+   CALENDAR DAYS
+========================================= */
+
+.weekdays,
+.dates {
+
+    display: grid;
+
+    grid-template-columns: repeat(7, 1fr);
+
+    text-align: center;
+
+    gap: 7px;
+
+}
+
+
+.weekdays {
+
+    margin-bottom: 15px;
+
+}
+
+
+.weekdays span {
+
+    font-size: 0.65rem;
+
+    font-weight: 700;
+
+    color: var(--soft-text);
+
+}
+
+
+.dates span {
+
+    min-height: 43px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    border-radius: 12px;
+
+    font-size: 0.85rem;
+
+    transition: 0.2s;
+
+}
+
+
+.dates span:not(:empty):hover {
+
+    background: var(--green-light);
+
+    color: var(--accent);
+
+    cursor: pointer;
+
+    transform: scale(1.08);
+
+}
+
+
+.special-day {
+
+    background: var(--accent) !important;
+
+    color: white !important;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================
+   PLANNER
+========================================= */
+
+.planner-card h3 {
+
+    color: var(--navy);
+
+    margin-bottom: 20px;
+
+}
+
+
+.planner-card input,
+.planner-card textarea,
+.simple-month textarea {
+
+    width: 100%;
+
+    border: 1px solid rgba(16,42,67,0.15);
+
+    border-radius: 12px;
+
+    padding: 14px;
+
+    font-family: inherit;
+
+    outline: none;
+
+    margin-bottom: 15px;
+
+    transition: 0.25s;
+
+}
+
+
+.planner-card textarea,
+.simple-month textarea {
+
+    min-height: 150px;
+
+    resize: vertical;
+
+}
+
+
+.planner-card input:focus,
+.planner-card textarea:focus,
+.simple-month textarea:focus {
+
+    border-color: var(--accent);
+
+    box-shadow:
+        0 0 0 4px
+        rgba(61,122,90,0.1);
+
+}
+
+
+.checklist {
+
+    display: grid;
+
+    gap: 10px;
+
+}
+
+
+.checklist label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    font-size: 0.85rem;
+
+}
+
+
+.checklist input {
+
+    accent-color: var(--accent);
+
+}
+
+
+/* =========================================
+   SIMPLE MONTHS
+========================================= */
+
+.simple-month {
+
+    background: white;
+
+    padding: 60px;
+
+    border-radius: 28px;
+
+    text-align: center;
+
+    border:
+        1px solid rgba(16,42,67,0.08);
+
+}
+
+
+.simple-month > p {
+
+    color: var(--accent);
+
+    letter-spacing: 4px;
+
+    font-size: 0.75rem;
+
+    font-weight: bold;
+
+}
+
+
+.simple-month h2 {
+
+    font-family: "Playfair Display", serif;
+
+    font-size: 4rem;
+
+    color: var(--navy);
+
+    margin: 10px 0;
+
+}
+
+
+.simple-month h3 {
+
+    color: var(--soft-text);
+
+    font-weight: 400;
+
+    margin-bottom: 30px;
+
+}
+
+
+/* =========================================
+   MUSIC SECTION
+========================================= */
+
+.music-section {
+
+    text-align: center;
+
+    padding: 40px;
+
+    background: var(--green-light);
+
+}
+
+
+.music-section h3 {
+
+    color: var(--navy);
+
+    margin-bottom: 10px;
+
+}
+
+
+.music-section p {
+
+    font-size: 0.85rem;
+
+    color: var(--soft-text);
+
+    margin-bottom: 15px;
+
+}
+
+
+/* =========================================
+   FOOTER
+========================================= */
+
+footer {
+
+    padding: 25px;
+
+    text-align: center;
+
+    background: var(--navy);
+
+    color: rgba(255,255,255,0.65);
+
+    font-size: 0.7rem;
+
+    letter-spacing: 2px;
+
+}
+
+
+/* =========================================
+   JANUARY ACTIVE
+========================================= */
+
+#january:checked ~ .website {
+
+    --accent: #4d8ca8;
+
+    --green-light: #e8f3f7;
+
+}
+
+
+#january:checked ~ .website .january-page {
+
+    display: block;
+
+}
+
+
+#january:checked ~ .website .january-decor {
+
+    display: block;
+
+}
+
+
+#january:checked ~ .website label[for="january"] {
+
+    background: var(--navy);
+
+    color: white;
+
+}
+
+
+/* =========================================
+   FEBRUARY ACTIVE
+========================================= */
+
+#february:checked ~ .website {
+
+    --navy: #6b1d3d;
+
+    --accent: #d85a7a;
+
+    --green-light: #fff0f4;
+
+}
+
+
+#february:checked ~ .website .february-page {
+
+    display: block;
+
+}
+
+
+#february:checked ~ .website .february-decor {
+
+    display: block;
+
+}
+
+
+#february:checked ~ .website label[for="february"] {
+
+    background: #d85a7a;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   MARCH ACTIVE
+========================================= */
+
+#march:checked ~ .website {
+
+    --navy: #244c3a;
+
+    --accent: #4f8f5d;
+
+    --green-light: #edf7ec;
+
+}
+
+
+#march:checked ~ .website .march-page {
+
+    display: block;
+
+}
+
+
+#march:checked ~ .website .march-decor {
+
+    display: block;
+
+}
+
+
+#march:checked ~ .website label[for="march"] {
+
+    background: #4f8f5d;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   APRIL ACTIVE
+========================================= */
+
+#april:checked ~ .website {
+
+    --navy: #74465f;
+
+    --accent: #d782a4;
+
+    --green-light: #fff1f6;
+
+}
+
+
+#april:checked ~ .website .april-page {
+
+    display: block;
+
+}
+
+
+#april:checked ~ .website .april-decor {
+
+    display: block;
+
+}
+
+
+#april:checked ~ .website label[for="april"] {
+
+    background: #d782a4;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   MAY ACTIVE
+========================================= */
+
+#may:checked ~ .website {
+
+    --navy: #465f27;
+
+    --accent: #8ba83d;
+
+    --green-light: #f5f9e9;
+
+}
+
+
+#may:checked ~ .website .may-page {
+
+    display: block;
+
+}
+
+
+#may:checked ~ .website .may-decor {
+
+    display: block;
+
+}
+
+
+#may:checked ~ .website label[for="may"] {
+
+    background: #8ba83d;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   JUNE ACTIVE
+========================================= */
+
+#june:checked ~ .website {
+
+    --navy: #7a4d19;
+
+    --accent: #e3a52b;
+
+    --green-light: #fff7df;
+
+}
+
+
+#june:checked ~ .website .june-page {
+
+    display: block;
+
+}
+
+
+#june:checked ~ .website .june-decor {
+
+    display: block;
+
+}
+
+
+#june:checked ~ .website label[for="june"] {
+
+    background: #e3a52b;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   JULY ACTIVE
+========================================= */
+
+#july:checked ~ .website {
+
+    --navy: #164b70;
+
+    --accent: #2c9cc9;
+
+    --green-light: #e7f6fc;
+
+}
+
+
+#july:checked ~ .website .july-page {
+
+    display: block;
+
+}
+
+
+#july:checked ~ .website .july-decor {
+
+    display: block;
+
+}
+
+
+#july:checked ~ .website label[for="july"] {
+
+    background: #2c9cc9;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   AUGUST ACTIVE
+========================================= */
+
+#august:checked ~ .website {
+
+    --navy: #47366b;
+
+    --accent: #7c64b3;
+
+    --green-light: #f1edfa;
+
+}
+
+
+#august:checked ~ .website .august-page {
+
+    display: block;
+
+}
+
+
+#august:checked ~ .website .august-decor {
+
+    display: block;
+
+}
+
+
+#august:checked ~ .website label[for="august"] {
+
+    background: #7c64b3;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   SEPTEMBER ACTIVE
+========================================= */
+
+#september:checked ~ .website {
+
+    --navy: #405744;
+
+    --accent: #78966e;
+
+    --green-light: #eff5ed;
+
+}
+
+
+#september:checked ~ .website .september-page {
+
+    display: block;
+
+}
+
+
+#september:checked ~ .website .september-decor {
+
+    display: block;
+
+}
+
+
+#september:checked ~ .website label[for="september"] {
+
+    background: #78966e;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   OCTOBER ACTIVE
+========================================= */
+
+#october:checked ~ .website {
+
+    --navy: #472316;
+
+    --accent: #d66b2d;
+
+    --green-light: #fff0e8;
+
+}
+
+
+#october:checked ~ .website .october-page {
+
+    display: block;
+
+}
+
+
+#october:checked ~ .website .october-decor {
+
+    display: block;
+
+}
+
+
+#october:checked ~ .website label[for="october"] {
+
+    background: #d66b2d;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   NOVEMBER ACTIVE
+========================================= */
+
+#november:checked ~ .website {
+
+    --navy: #573d2c;
+
+    --accent: #a8754f;
+
+    --green-light: #f7efe8;
+
+}
+
+
+#november:checked ~ .website .november-page {
+
+    display: block;
+
+}
+
+
+#november:checked ~ .website .november-decor {
+
+    display: block;
+
+}
+
+
+#november:checked ~ .website label[for="november"] {
+
+    background: #a8754f;
+
+    color: white;
+
+}
+
+
+/* =========================================
+   DECEMBER ACTIVE
+========================================= */
+
+#december:checked ~ .website {
+
+    --navy: #123b2d;
+
+    --accent: #c23b3b;
+
+    --green-light: #edf7f1;
+
+}
+
+
+#december:checked ~ .website .december-page {
+
+    display: block;
+
+}
+
+
+#december:checked ~ .website .december-decor {
+
+    display: block;
+
+}
+
+
+#december:checked ~ .website label[for="december"] {
+
+    background: #c23b3b;
+
+    color: white;
+
+}
+
+
+/* CHRISTMAS SNOW EFFECT */
+
+#december:checked ~ .website .hero::after {
+
+    content: "❄  ❅  ❄  ❅  ❄  ❅";
+
+    position: absolute;
+
+    right: 30px;
+
+    top: 20px;
+
+    color: white;
+
+    opacity: 0.6;
+
+    letter-spacing: 15px;
+
+    animation: snowfall 4s linear infinite;
+
+}
+
+
+@keyframes snowfall {
+
+    0% {
+
+        transform: translateY(-20px);
+
+        opacity: 0;
+
+    }
+
+    50% {
+
+        opacity: 0.8;
+
+    }
+
+    100% {
+
+        transform: translateY(180px);
+
+        opacity: 0;
+
+    }
+
+}
+
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 800px) {
+
+    .website {
+
+        width: 96%;
+
+        margin: 15px auto;
+
+        border-radius: 20px;
+
+    }
+
+
+    .hero {
+
+        padding: 35px 25px;
+
+    }
+
+
+    .decorations {
+
+        right: 25px;
+
+        font-size: 3rem;
+
+    }
+
+
+    .month-content {
+
+        padding: 30px 20px;
+
+    }
+
+
+    .month-introduction {
+
+        flex-direction: column;
+
+    }
+
+
+    .calendar-and-planner {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+    .simple-month {
+
+        padding: 35px 20px;
+
+    }
+
+
+    .simple-month h2 {
+
+        font-size: 3rem;
+
+    }
+
+}
+
+
+@media (max-width: 500px) {
+
+    .calendar-card,
+    .planner-card {
+
+        padding: 20px 12px;
+
+    }
+
+
+    .dates span {
+
+        min-height: 38px;
+
+        font-size: 0.75rem;
+
+    }
+
+
+    .weekdays span {
+
+        font-size: 0.55rem;
+
+    }
+
+
+    .month-navigation label {
+
+        min-width: 55px;
+
+        font-size: 0.65rem;
+
+    }
+
+}

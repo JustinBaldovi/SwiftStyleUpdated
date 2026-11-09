@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body class="auth-bg">
+
+<div id="site-header"></div>
+
+<main>
+  <div class="auth-page">
+  <div class="form-box">
+    <h2>Create an Account</h2>
+    <p id="error-msg" style="color:var(--danger); margin-bottom:16px; text-align:center; display:none;"></p>
+
+    <form id="register-form">
+      <div class="form-group">
+        <label for="full_name">Full Name</label>
+        <input type="text" id="full_name" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="text" id="phone" placeholder="09XXXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label for="address">Address</label>
+        <textarea id="address" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required>
+      </div>
+      <div class="form-group">
+        <label for="confirm_password">Confirm Password</label>
+        <input type="password" id="confirm_password" required>
+      </div>
+      <button type="submit" class="btn btn-block">Sign Up</button>
+    </form>
+    <div id="social-login"></div>
+    <p class="form-note">Already have an account? <a href="login.html">Log In</a></p>
+  </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  document.getElementById('register-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    const errorEl = document.getElementById('error-msg');
+    const fullName = document.getElementById('full_name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+
+    if (password.length < 6) {
+      errorEl.textContent = 'Password must be at least 6 characters.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (password !== confirm) {
+      errorEl.textContent = 'Passwords do not match.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    const result = await registerUser(fullName, email, phone, address, password);
+    btn.disabled = false;
+    if (result.ok) {
+      window.location.href = safeRedirect(qs('redirect'));
+    } else {
+      errorEl.textContent = result.error;
+      errorEl.style.display = 'block';
+    }
+  });
+  renderSocialButtons('social-login', 'signup');
+</script>
+</body>
+</html>

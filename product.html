@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Product | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section container" id="product-section"></section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  appReady(function () {
+    const productId = Number(qs('id'));
+    const product = getProductById(productId);
+    const section = document.getElementById('product-section');
+  
+    if (!product) {
+      window.location.href = 'shop.html';
+    } else {
+      document.getElementById('page-title').textContent = product.name + ' | Swift Style PH';
+  
+      const related = PRODUCTS.filter(p => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4);
+  
+      section.innerHTML = `
+        <div class="product-detail">
+          <div class="product-detail-img">
+            <img id="product-main-img" src="${productImage(product)}"${productImgClass(product)} alt="${product.name}">
+          </div>
+          <div>
+            ${product.isNew ? '<span class="product-badge">NEW</span>' : ''}
+            <h1>${product.name}</h1>
+            <div class="price">${formatPrice(product.price)}</div>
+            <p class="desc">${product.description}</p>
+  
+            ${product.stock > 0 ? `
+              <p class="stock-note">In stock: ${product.stock} available</p>
+              <form id="add-to-cart-form">
+                ${product.colors.length ? `
+                <div class="option-group">
+                  <label>Color: <b id="color-name">${product.colors[0]}</b></label>
+                  <div class="color-options">
+                    ${product.colors.map((c, i) => `
+                      <label>
+                        <input type="radio" name="color" value="${c}" ${i === 0 ? 'checked' : ''}>
+                        <span><i class="swatch" style="background:${COLOR_HEX[c] || '#ccc'}"></i>${c}</span>
+                      </label>`).join('')}
+                  </div>
+                </div>` : ''}
+                <div class="option-group">
+                  <label for="quantity">Quantity</label>
+                  <input type="number" id="quantity" value="1" min="1" max="${product.stock}" class="qty-input">
+                </div>
+                <button type="submit" class="btn" id="add-btn">Add to Cart</button>
+                <p id="add-msg" style="margin-top:12px; color:var(--success); font-weight:600; display:none;">Added to cart!</p>
+              </form>
+            ` : `<p class="stock-note" style="color:var(--danger); font-weight:700;">Out of Stock</p>`}
+          </div>
+        </div>
+  
+        ${related.length ? `
+          <h2 class="section-title">You May Also <span>Like</span></h2>
+          <div class="product-grid" id="related-grid"></div>
+        ` : ''}
+      `;
+  
+      if (related.length) {
+        renderProductGrid('related-grid', related);
+      }
+  
+      const form = document.getElementById('add-to-cart-form');
+      if (form) {
+        // Changing the colour swaps the bag photo to that colour
+        const mainImg = document.getElementById('product-main-img');
+        const colorName = document.getElementById('color-name');
+        // warm the cache so swaps are instant
+        product.colors.forEach(function (c) { new Image().src = productImage(product, c); });
+        form.querySelectorAll('input[name="color"]').forEach(function (radio) {
+          radio.addEventListener('change', function () {
+            if (colorName) colorName.textContent = radio.value;
+            mainImg.classList.add('swapping');
+            const next = new Image();
+            next.onload = function () {
+              mainImg.src = next.src;
+              mainImg.alt = product.name + ' - ' + radio.value;
+              mainImg.classList.remove('swapping');
+            };
+            next.onerror = function () { mainImg.classList.remove('swapping'); };
+            next.src = productImage(product, radio.value);
+          });
+        });
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          const color = form.querySelector('input[name="color"]:checked');
+          const qty = Math.max(1, parseInt(document.getElementById('quantity').value, 10) || 1);
+          const msg = document.getElementById('add-msg');
+          const btn = document.getElementById('add-btn');
+          btn.disabled = true;
+          SSPH_DB.cartAdd(product.id, color ? color.value : '', qty).then(function (r) {
+            btn.disabled = false;
+            msg.style.display = 'block';
+            if (r.ok) {
+              msg.style.color = 'var(--success)';
+              msg.textContent = 'Added to cart!';
+              renderHeader();
+            } else {
+              msg.style.color = 'var(--danger)';
+              msg.textContent = r.error;
+            }
+          });
+        });
+      }
+    }
+  });
+</script>
+</body>
+</html>

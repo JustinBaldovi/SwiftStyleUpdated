@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="hero">
+    <h1>Carry What Matters.</h1>
+    <p>Quality backpacks, totes, and bags made for everyday Filipino life.</p>
+    <a href="shop.html" class="btn">Shop Now</a>
+  </section>
+
+  <section class="section container">
+    <h2 class="section-title">Featured <span>Bags</span></h2>
+    <div class="product-grid" id="featured-grid"></div>
+  </section>
+
+  <section class="section container" style="background:var(--light-bg); border-radius:16px;">
+    <h2 class="section-title">New <span>Arrivals</span></h2>
+    <div class="product-grid" id="new-grid"></div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  appReady(function () {
+    renderProductGrid('featured-grid', PRODUCTS.filter(p => p.featured));
+    renderProductGrid('new-grid', PRODUCTS.filter(p => p.isNew));
+  });
+</script>
+</body>
+</html>

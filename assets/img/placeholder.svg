@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#f7f6fb"/>
+  <g fill="#c9c4e0">
+    <rect x="130" y="140" width="140" height="160" rx="14"/>
+    <rect x="160" y="110" width="80" height="50" rx="20" fill="#f7f6fb" stroke="#c9c4e0" stroke-width="10"/>
+  </g>
+  <text x="200" y="330" font-family="Segoe UI, Arial" font-size="16" fill="#9a94b8" text-anchor="middle">Swift Style PH</text>
+</svg>

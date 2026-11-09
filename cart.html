@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section container">
+    <h1 class="section-title">Your <span>Cart</span></h1>
+    <div id="cart-content"></div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  async function renderCart() {
+    const el = document.getElementById('cart-content');
+    const res = await SSPH_DB.cartList();
+    if (!res.ok) { el.innerHTML = '<p class="empty-state">Could not load your cart: ' + escapeHtml(res.error) + '</p>'; return; }
+    const cart = res.data.filter(i => getProductById(i.productId));
+
+    if (!cart.length) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <p>Your cart is empty.</p><br>
+          <a href="shop.html" class="btn">Continue Shopping</a>
+        </div>`;
+      return;
+    }
+
+    const rows = cart.map(item => {
+      const p = getProductById(item.productId);
+      return `
+        <tr>
+          <td>
+            <div class="cart-item-info">
+              <img src="${productImage(p, item.color)}"${productImgClass(p)} alt="${escapeHtml(p.name)} - ${escapeHtml(item.color)}">
+              <a href="product.html?id=${p.id}">${escapeHtml(p.name)}</a>
+            </div>
+          </td>
+          <td>${escapeHtml(item.color) || '—'}</td>
+          <td>${formatPrice(p.price)}</td>
+          <td>
+            <div class="qty-form">
+              <input type="number" min="1" max="${p.stock}" value="${item.qty}" data-id="${item.cartId}" class="cart-qty-input">
+              <button class="btn-small btn-outline update-qty-btn" data-id="${item.cartId}" style="color:var(--purple); border-color:var(--purple);">Update</button>
+            </div>
+          </td>
+          <td>${formatPrice(p.price * item.qty)}</td>
+          <td><button class="remove-btn" data-id="${item.cartId}">Remove</button></td>
+        </tr>`;
+    }).join('');
+
+    const total = cart.reduce((sum, i) => sum + getProductById(i.productId).price * i.qty, 0);
+
+    el.innerHTML = `
+      <p id="cart-error" style="color:var(--danger); margin-bottom:12px; display:none;"></p>
+      <table class="cart-table">
+        <thead>
+          <tr><th>Product</th><th>Color</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="cart-summary">
+        <div class="row"><span>Subtotal</span><span>${formatPrice(total)}</span></div>
+        <div class="row"><span>Shipping</span><span>Calculated at checkout</span></div>
+        <div class="row total"><span>Total</span><span>${formatPrice(total)}</span></div>
+        <a href="checkout.html" class="btn btn-block" style="margin-top:16px; text-align:center;">Proceed to Checkout</a>
+        <a href="shop.html" class="btn btn-secondary btn-block" style="margin-top:10px; text-align:center;">Continue Shopping</a>
+      </div>`;
+
+    function showError(msg) {
+      const e = document.getElementById('cart-error');
+      e.textContent = msg; e.style.display = 'block';
+    }
+    document.querySelectorAll('.update-qty-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = Number(btn.dataset.id);
+        const input = document.querySelector(`.cart-qty-input[data-id="${id}"]`);
+        const r = await SSPH_DB.cartUpdate(id, parseInt(input.value, 10) || 1);
+        if (!r.ok) { showError(r.error); return; }
+        await renderCart();
+        renderHeader();
+      });
+    });
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const r = await SSPH_DB.cartRemove(Number(btn.dataset.id));
+        if (!r.ok) { showError(r.error); return; }
+        await renderCart();
+        renderHeader();
+      });
+    });
+  }
+
+  appReady(renderCart);
+</script>
+</body>
+</html>

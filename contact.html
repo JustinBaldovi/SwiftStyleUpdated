@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section container">
+    <div class="contact-hero">
+      <h1 class="section-title">Get in <span>Touch</span></h1>
+      <p>Have a question about your order or one of our bags? We'd love to hear from you.</p>
+    </div>
+
+    <div class="contact-grid">
+      <div>
+        <div id="sent-msg" class="flash flash-success" style="display:none; margin-bottom:16px;">
+          Thanks for reaching out! We'll get back to you within 24 hours.
+        </div>
+        <form id="contact-form" class="form-box" style="margin:0;">
+          <div class="form-group">
+            <label for="name">Your Name</label>
+            <input type="text" id="name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" required>
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" rows="5" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-block">Send Message</button>
+        </form>
+      </div>
+
+      <div>
+        <div class="contact-info-card">
+          <h4>📍 Location</h4>
+          <p>Davao City, Philippines (Local pickup and nationwide shipping)</p>
+          <h4>📧 Email</h4>
+          <p>hello@swiftstyleph.com</p>
+          <h4>📱 Phone / Viber</h4>
+          <p>0917-123-4567</p>
+          <h4>💬 Social Media</h4>
+          <p>Facebook: /SwiftStylePH<br>Instagram: @swiftstyle.ph<br>TikTok: @swiftstyleph</p>
+          <h4>🕒 Business Hours</h4>
+          <p>Monday – Saturday, 9:00 AM – 6:00 PM</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  document.getElementById('contact-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    document.getElementById('sent-msg').style.display = 'block';
+    this.reset();
+  });
+</script>
+</body>
+</html>

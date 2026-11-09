@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section container">
+    <h1 class="section-title">All <span>Bags</span></h1>
+
+    <div style="display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap;">
+      <input type="text" id="search-input" placeholder="Search bags..."
+             style="flex:1; min-width:200px; padding:12px 14px; border:1px solid var(--border); border-radius:8px;">
+      <select id="sort-select" style="padding:12px 14px; border:1px solid var(--border); border-radius:8px;">
+        <option value="newest">Newest</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="name">Name A-Z</option>
+      </select>
+    </div>
+
+    <div class="shop-layout">
+      <aside class="filter-box">
+        <h4>Categories</h4>
+        <a href="shop.html" class="active">All Bags</a>
+        <div id="category-links"></div>
+      </aside>
+      <div>
+        <div class="product-grid" id="shop-grid"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  appReady(function () {
+    document.getElementById('category-links').innerHTML = CATEGORIES.map(c =>
+      `<a href="category.html?slug=${c.slug}">${c.name}</a>`
+    ).join('');
+  
+    function applyFilters() {
+      const search = document.getElementById('search-input').value.trim().toLowerCase();
+      const sort = document.getElementById('sort-select').value;
+      let list = PRODUCTS.filter(p => p.name.toLowerCase().includes(search));
+  
+      if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
+      else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
+      else if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
+      else list.sort((a, b) => b.id - a.id);
+  
+      renderProductGrid('shop-grid', list);
+    }
+  
+    document.getElementById('search-input').addEventListener('input', applyFilters);
+    document.getElementById('sort-select').addEventListener('change', applyFilters);
+    applyFilters();
+  });
+</script>
+</body>
+</html>

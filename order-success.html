@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmed | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section container" id="order-section"></section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  appReady(async function () {
+    const orderId = Number(qs('order_id'));
+    const section = document.getElementById('order-section');
+    const res = orderId ? await SSPH_DB.getOrder(orderId) : { ok: false };
+
+    if (!res.ok) {
+      window.location.href = 'index.html';
+      return;
+    }
+    const order = res.data;
+
+    const itemLines = order.order_items.map(item =>
+      `<div class="line"><span>${escapeHtml(item.product_name)}${item.color ? ' (' + escapeHtml(item.color) + ')' : ''} × ${item.quantity}</span><span>${formatPrice(item.subtotal)}</span></div>`
+    ).join('');
+
+    section.innerHTML = `
+      <div style="text-align:center; margin-bottom:36px;">
+        <h1 class="section-title">🎉 Thank You for Your Order!</h1>
+        <p>Your order <strong>#${String(order.order_id).padStart(6, '0')}</strong> has been placed successfully.</p>
+      </div>
+      <div class="order-summary-box" style="max-width:600px; margin:0 auto;">
+        <h2 style="font-size:1.2rem; margin-bottom:14px;">Order Details</h2>
+        ${itemLines}
+        <hr style="margin:14px 0; border-color:var(--border);">
+        <div class="line"><span>Payment Method</span><span>${escapeHtml(order.payment_method)}</span></div>
+        <div class="line"><span>Shipping Address</span><span style="text-align:right; max-width:60%;">${escapeHtml(order.address)}</span></div>
+        <div class="line total" style="font-weight:800; font-size:1.15rem; margin-top:10px;">
+          <span>Total</span><span>${formatPrice(order.total_amount)}</span>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:30px;">
+        <a href="shop.html" class="btn">Continue Shopping</a>
+      </div>`;
+  });
+</script>
+</body>
+</html>
