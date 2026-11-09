@@ -261,6 +261,34 @@ function getBackgroundMusic() {
   }, { once: true });
   document.body.appendChild(audio);
   window.ssphBackgroundMusic = audio;
+  window.ssphResumeBackgroundMusic = function () {
+    let shouldPlay = false;
+    try {
+      shouldPlay = localStorage.getItem(BACKGROUND_MUSIC_KEY) === '1';
+    } catch (error) {
+      console.warn('[Music] Could not read playback preference:', error);
+      return;
+    }
+    if (!shouldPlay || !audio.paused || window.ssphMusicResumePending) return;
+    window.ssphMusicResumePending = true;
+    audio.play().catch(function (error) {
+      console.info('[Music] Playback could not resume automatically:', error);
+    }).finally(function () {
+      window.ssphMusicResumePending = false;
+      if (window.ssphUpdateMusicControl) window.ssphUpdateMusicControl();
+    });
+  };
+  document.addEventListener('pointerdown', function (event) {
+    if (event.isTrusted && !(event.target.closest && event.target.closest('.music-toggle'))) {
+      window.ssphResumeBackgroundMusic();
+    }
+  }, true);
+  document.addEventListener('keydown', function (event) {
+    if (event.isTrusted) window.ssphResumeBackgroundMusic();
+  }, true);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) window.ssphResumeBackgroundMusic();
+  });
   try {
     const savedVolumeValue = localStorage.getItem(BACKGROUND_VOLUME_KEY);
     const savedVolume = savedVolumeValue === null ? NaN : Number(savedVolumeValue);
@@ -379,8 +407,8 @@ function renderHeader() {
       updateMusicControl();
       return;
     }
+    saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '1');
     music.play().then(function () {
-      saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '1');
       updateMusicControl();
     }).catch(function (error) {
       saveBackgroundMusicPreference(BACKGROUND_MUSIC_KEY, '0');
@@ -397,16 +425,7 @@ function renderHeader() {
     saveBackgroundMusicPreference(BACKGROUND_TIME_KEY, music.currentTime || 0);
   };
   window.addEventListener('pagehide', el._musicPagehide);
-  try {
-    if (localStorage.getItem(BACKGROUND_MUSIC_KEY) === '1' && music.paused) {
-      music.play().catch(function (error) {
-        updateMusicControl();
-        console.info('[Music] Tap the music button to resume playback:', error);
-      });
-    }
-  } catch (error) {
-    console.warn('[Music] Could not read playback preference:', error);
-  }
+  window.ssphResumeBackgroundMusic();
   updateMusicControl();
 
   const badge = el.querySelector('.cart-badge');
