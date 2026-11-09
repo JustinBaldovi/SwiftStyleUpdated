@@ -309,18 +309,7 @@ function renderHeader() {
     <div class="container header-inner">
       <a href="index.html" class="logo">Swift Style <span>PH</span></a>
       <nav class="main-nav">
-        <div class="home-nav-item">
-          <a href="index.html">Home</a>
-          <div class="home-audio-control">
-            <button type="button" class="music-toggle" aria-pressed="false" aria-label="Play background music" title="Play background music">
-              <span class="music-icon" aria-hidden="true">♫</span>
-            </button>
-            <label class="music-volume-label">
-              <span class="sr-only">Background music volume</span>
-              <input class="music-volume" type="range" min="0" max="1" step="0.01" value="0.2" aria-label="Background music volume">
-            </label>
-          </div>
-        </div>
+        <a href="index.html">Home</a>
         <a href="shop.html">Shop</a>
         <div class="dropdown">
           <span>Categories ▾</span>
@@ -337,6 +326,15 @@ function renderHeader() {
         <a href="contact.html">Contact Us</a>
       </nav>
       <div class="nav-actions">
+        <div class="music-control">
+          <button type="button" class="music-toggle" aria-pressed="false" aria-label="Play background music" title="Play background music">
+            <span class="music-icon" aria-hidden="true">♫</span>
+          </button>
+          <label class="music-volume-label">
+            <span class="sr-only">Background music volume</span>
+            <input class="music-volume" type="range" min="0" max="1" step="0.01" value="0.2" aria-label="Background music volume">
+          </label>
+        </div>
         <a href="cart.html" class="cart-link">🛒 Cart<span class="cart-badge">${count}</span></a>
         <div class="profile-menu">
           <button type="button" class="profile-trigger" id="profile-trigger" aria-expanded="false"
