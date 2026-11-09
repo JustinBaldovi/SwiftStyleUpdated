@@ -123,8 +123,15 @@
     }
     renderHeader();
     if (profile.data.role !== 'admin') {
-      showNotice('This page is available to the store owner only.', true);
+      showNotice(
+        'This account (' + (profile.data.email || 'signed-in email') + ') has the "' +
+        profile.data.role + '" role. Set its role to "admin" in public.profiles to enable the owner dashboard.',
+        true
+      );
       document.querySelector('.owner-tabs').hidden = true;
+      document.querySelectorAll('.owner-panel').forEach(function (panel) {
+        panel.hidden = true;
+      });
       return;
     }
 

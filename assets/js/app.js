@@ -238,7 +238,7 @@ function renderHeader() {
         <a href="index.html">Home</a>
         <a href="shop.html">Shop</a>
         <a href="orders.html">My Orders</a>
-        ${user.role === 'admin' ? '<a href="owner.html">Owner</a>' : ''}
+        <a href="owner.html">Owner Dashboard</a>
         <div class="dropdown">
           <span>Categories ▾</span>
           <div class="dropdown-menu category-mega-menu">
