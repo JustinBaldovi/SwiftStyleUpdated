@@ -26,7 +26,8 @@ I can't reach yours — step 5 below is your smoke test.
    continue to restrict customer and admin operations.
 10. Run `supabase/10_inventory_reviews.sql` to enable admin inventory/image management and customer product reviews.
     It creates the public product-image bucket and review table with RLS; only admins can upload or change products.
-11. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+11. Run `supabase/11_product_color_images.sql` to let each product color have its own image.
+12. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -88,6 +89,8 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
 - Customers can rate products from 1 to 5 stars and leave a comment on the product page. Each signed-in customer can submit
   one review per product; they can update their own review. The dashboard lists submitted feedback.
   Run `supabase/10_inventory_reviews.sql` before using inventory image uploads or customer reviews.
+- Product color variants use optional per-color images uploaded from the owner inventory editor. Run
+  `supabase/11_product_color_images.sql` before assigning variant images.
 - Admins can permanently delete orders from the owner dashboard after confirmation. Related order items are deleted too;
   inventory is not restored. Run `supabase/07_admin_delete_orders.sql` on existing projects to enable this feature.
   If the API reports a table permission error, apply `supabase/08_fix_admin_order_delete_permissions.sql`.

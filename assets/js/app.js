@@ -27,6 +27,10 @@ function colorSlug(c) {
    and are named <photo>-<colour>.webp (e.g. backpack1-navy.webp).
    With no colour given, the product's first listed colour is used. */
 function productImage(p, color) {
+  if (color && p.colorImages && p.colorImages[color]) return p.colorImages[color];
+  if (!color && p.colors && p.colors.length && p.colorImages && p.colorImages[p.colors[0]]) {
+    return p.colorImages[p.colors[0]];
+  }
   if (!p.image) return IMG_PLACEHOLDER;
   if (/^https?:\/\//i.test(p.image)) return p.image;
   if (!p.colors || !p.colors.length) return 'assets/img/' + p.image;   // single-photo product
@@ -34,6 +38,10 @@ function productImage(p, color) {
   if (!c) return 'assets/img/' + p.image;
   const stem = p.image.replace(/\.[a-z]+$/i, '');
   return 'assets/img/variants/' + stem + '-' + colorSlug(c) + '.webp';
+}
+function productBaseImage(p) {
+  if (!p.image) return IMG_PLACEHOLDER;
+  return /^https?:\/\//i.test(p.image) ? p.image : 'assets/img/' + p.image;
 }
 function productImgClass(p) {
   return p.fit === 'contain' ? ' class="fit-contain"' : '';
@@ -347,7 +355,7 @@ function productCardHTML(p) {
   return `
   <div class="product-card">
     <a href="product.html?id=${p.id}">
-      <div class="product-thumb"><img src="${escapeHtml(productImage(p))}"${productImgClass(p)} alt="${escapeHtml(p.name)}"></div>
+      <div class="product-thumb"><img src="${escapeHtml(productImage(p))}" data-fallback-src="${escapeHtml(productBaseImage(p))}"${productImgClass(p)} alt="${escapeHtml(p.name)}"></div>
     </a>
     <div class="product-info">
       ${p.isNew ? '<span class="product-badge">NEW</span>' : ''}
@@ -366,6 +374,15 @@ function renderProductGrid(containerId, products) {
   el.innerHTML = products.length
     ? products.map(productCardHTML).join('')
     : '<p class="empty-state">No bags found.</p>';
+  el.querySelectorAll('img[data-fallback-src]').forEach(function (image) {
+    var fallbackImage = function () {
+      image.removeEventListener('error', fallbackImage);
+      if (image.src !== new URL(image.dataset.fallbackSrc, document.baseURI).href) {
+        image.src = image.dataset.fallbackSrc;
+      }
+    };
+    image.addEventListener('error', fallbackImage);
+  });
 }
 function sortProducts(list, sort) {
   const copy = list.slice();

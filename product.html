@@ -38,7 +38,7 @@
       section.innerHTML = `
         <div class="product-detail">
           <div class="product-detail-img">
-            <img id="product-main-img" src="${escapeHtml(productImage(product))}"${productImgClass(product)} alt="${escapeHtml(product.name)}">
+            <img id="product-main-img" src="${escapeHtml(productImage(product))}" data-fallback-src="${escapeHtml(productBaseImage(product))}"${productImgClass(product)} alt="${escapeHtml(product.name)}">
           </div>
           <div>
             ${product.isNew ? '<span class="product-badge">NEW</span>' : ''}
@@ -180,6 +180,15 @@
         // Changing the colour swaps the bag photo to that colour
         const mainImg = document.getElementById('product-main-img');
         const colorName = document.getElementById('color-name');
+        const fallbackProductImage = function () {
+          const fallback = new URL(mainImg.dataset.fallbackSrc, document.baseURI).href;
+          if (mainImg.src !== fallback) {
+            mainImg.src = mainImg.dataset.fallbackSrc;
+          } else {
+            mainImg.removeEventListener('error', fallbackProductImage);
+          }
+        };
+        mainImg.addEventListener('error', fallbackProductImage);
         // warm the cache so swaps are instant
         product.colors.forEach(function (c) { new Image().src = productImage(product, c); });
         form.querySelectorAll('input[name="color"]').forEach(function (radio) {
@@ -192,7 +201,10 @@
               mainImg.alt = product.name + ' - ' + radio.value;
               mainImg.classList.remove('swapping');
             };
-            next.onerror = function () { mainImg.classList.remove('swapping'); };
+            next.onerror = function () {
+              mainImg.src = mainImg.dataset.fallbackSrc;
+              mainImg.classList.remove('swapping');
+            };
             next.src = productImage(product, radio.value);
           });
         });

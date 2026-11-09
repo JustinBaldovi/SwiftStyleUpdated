@@ -70,7 +70,51 @@
 
   var inventoryProducts = [];
   var currentProductImage = '';
+  var currentColorImages = {};
+  var colorImageFiles = {};
+  var colorImageObjectUrls = {};
   var previewObjectUrl = '';
+
+  function productColors() {
+    var seen = {};
+    return document.getElementById('product-colors').value.split(',')
+      .map(function (color) { return color.trim(); })
+      .filter(function (color) {
+        var key = color.toLowerCase();
+        if (!color || seen[key]) return false;
+        seen[key] = true;
+        return true;
+      });
+  }
+
+  function clearColorImageObjectUrls() {
+    Object.keys(colorImageObjectUrls).forEach(function (color) {
+      URL.revokeObjectURL(colorImageObjectUrls[color]);
+    });
+    colorImageObjectUrls = {};
+  }
+
+  function renderColorImageFields() {
+    var container = document.getElementById('product-color-images');
+    var colors = productColors();
+    Object.keys(colorImageFiles).forEach(function (color) {
+      if (colors.indexOf(color) < 0) {
+        delete colorImageFiles[color];
+        if (colorImageObjectUrls[color]) URL.revokeObjectURL(colorImageObjectUrls[color]);
+        delete colorImageObjectUrls[color];
+      }
+    });
+    container.innerHTML = colors.length ? colors.map(function (color, index) {
+      var source = colorImageObjectUrls[color] || SSPH_DB.productImageUrl(currentColorImages[color]);
+      return '<div class="color-image-row">' +
+        '<label for="color-image-' + index + '">' + escapeHtml(color) + ' picture</label>' +
+        '<input type="file" id="color-image-' + index + '" class="color-image-input" data-color="' +
+          escapeHtml(color) + '" accept="image/jpeg,image/png,image/webp">' +
+        (source ? '<img class="inventory-image-preview color-image-preview" src="' + escapeHtml(source) +
+          '" alt="' + escapeHtml(color) + ' bag preview">' : '<span class="color-image-empty">No separate picture assigned</span>') +
+        '</div>';
+    }).join('') : '<p class="color-image-empty">Enter one or more colors to assign variant pictures.</p>';
+  }
 
   function renderInventory(products) {
     inventoryProducts = products;
@@ -141,6 +185,10 @@
     document.getElementById('save-product').textContent = 'Add product';
     document.getElementById('cancel-product-edit').hidden = true;
     currentProductImage = '';
+    currentColorImages = {};
+    colorImageFiles = {};
+    clearColorImageObjectUrls();
+    renderColorImageFields();
     var preview = document.getElementById('product-image-preview');
     preview.hidden = true;
     preview.removeAttribute('src');
@@ -151,6 +199,8 @@
   function beginProductEdit(product) {
     if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
     previewObjectUrl = '';
+    clearColorImageObjectUrls();
+    colorImageFiles = {};
     document.getElementById('product-id').value = product.product_id;
     document.getElementById('product-name').value = product.product_name || '';
     document.getElementById('product-category').value = product.category_id;
@@ -163,10 +213,13 @@
     document.getElementById('product-new').checked = !!product.is_new;
     document.getElementById('product-image').value = '';
     currentProductImage = product.image || '';
+    currentColorImages = Object.assign({}, product.color_images || {});
+    colorImageFiles = {};
     var preview = document.getElementById('product-image-preview');
     var imageUrl = SSPH_DB.productImageUrl(currentProductImage);
     preview.hidden = !imageUrl;
     if (imageUrl) preview.src = imageUrl;
+    renderColorImageFields();
     document.getElementById('product-form-title').textContent = 'Edit product';
     document.getElementById('save-product').textContent = 'Save changes';
     document.getElementById('cancel-product-edit').hidden = false;
@@ -310,6 +363,22 @@
     preview.hidden = false;
   });
 
+  document.getElementById('product-colors').addEventListener('input', renderColorImageFields);
+  document.getElementById('product-color-images').addEventListener('change', function (event) {
+    var input = event.target.closest('.color-image-input');
+    if (!input) return;
+    var color = input.dataset.color;
+    var file = input.files && input.files[0];
+    if (colorImageObjectUrls[color]) URL.revokeObjectURL(colorImageObjectUrls[color]);
+    delete colorImageObjectUrls[color];
+    delete colorImageFiles[color];
+    if (file) {
+      colorImageFiles[color] = file;
+      colorImageObjectUrls[color] = URL.createObjectURL(file);
+    }
+    renderColorImageFields();
+  });
+
   document.getElementById('cancel-product-edit').addEventListener('click', resetProductForm);
   document.getElementById('inventory-products').addEventListener('click', async function (event) {
     var editButton = event.target.closest('.edit-product');
@@ -343,9 +412,15 @@
     var productId = Number(document.getElementById('product-id').value) || null;
     var file = document.getElementById('product-image').files[0];
     var imagePath = currentProductImage;
+    var colors = productColors();
+    var colorImages = {};
+    colors.forEach(function (color) {
+      if (currentColorImages[color]) colorImages[color] = currentColorImages[color];
+    });
     var newlyUploadedImage = '';
+    var newlyUploadedColorImages = [];
     submit.disabled = true;
-    showNotice(file ? 'Uploading product picture…' : 'Saving product…');
+    showNotice(file || Object.keys(colorImageFiles).length ? 'Uploading product pictures…' : 'Saving product…');
     if (file) {
       var upload = await SSPH_DB.adminUploadProductImage(file);
       if (!upload.ok) {
@@ -356,6 +431,28 @@
       imagePath = upload.data;
       newlyUploadedImage = upload.data;
     }
+    for (var colorIndex = 0; colorIndex < colors.length; colorIndex += 1) {
+      var colorName = colors[colorIndex];
+      if (!colorImageFiles[colorName]) continue;
+      var colorUpload = await SSPH_DB.adminUploadProductImage(colorImageFiles[colorName]);
+      if (!colorUpload.ok) {
+        var imageCleanupErrors = [];
+        for (var cleanupIndex = 0; cleanupIndex < newlyUploadedColorImages.length; cleanupIndex += 1) {
+          var removedColor = await SSPH_DB.adminRemoveProductImage(newlyUploadedColorImages[cleanupIndex]);
+          if (!removedColor.ok) imageCleanupErrors.push(removedColor.error);
+        }
+        if (newlyUploadedImage) {
+          var removedMain = await SSPH_DB.adminRemoveProductImage(newlyUploadedImage);
+          if (!removedMain.ok) imageCleanupErrors.push(removedMain.error);
+        }
+        submit.disabled = false;
+        showNotice('Could not upload the ' + colorName + ' picture: ' + colorUpload.error +
+          (imageCleanupErrors.length ? ' Unused uploads could not be removed: ' + imageCleanupErrors.join('; ') : ''), true);
+        return;
+      }
+      colorImages[colorName] = colorUpload.data;
+      newlyUploadedColorImages.push(colorUpload.data);
+    }
     var result = await SSPH_DB.adminSaveProduct({
       id: productId,
       categoryId: document.getElementById('product-category').value,
@@ -364,30 +461,44 @@
       description: document.getElementById('product-description').value,
       price: document.getElementById('product-price').value,
       stock: document.getElementById('product-stock').value,
-      colors: document.getElementById('product-colors').value,
+      colors: colors,
+      colorImages: colorImages,
       image: imagePath,
       featured: document.getElementById('product-featured').checked,
       isNew: document.getElementById('product-new').checked
     });
     if (!result.ok) {
-      var uploadCleanupWarning = '';
+      var uploadCleanupWarnings = [];
       if (newlyUploadedImage) {
         var uploadCleanup = await SSPH_DB.adminRemoveProductImage(newlyUploadedImage);
-        if (!uploadCleanup.ok) uploadCleanupWarning = ' The unused uploaded image could not be removed: ' + uploadCleanup.error;
+        if (!uploadCleanup.ok) uploadCleanupWarnings.push(uploadCleanup.error);
+      }
+      for (var failedColorIndex = 0; failedColorIndex < newlyUploadedColorImages.length; failedColorIndex += 1) {
+        var colorCleanup = await SSPH_DB.adminRemoveProductImage(newlyUploadedColorImages[failedColorIndex]);
+        if (!colorCleanup.ok) uploadCleanupWarnings.push(colorCleanup.error);
       }
       submit.disabled = false;
-      showNotice('Could not save product: ' + result.error + uploadCleanupWarning, true);
+      showNotice('Could not save product: ' + result.error +
+        (uploadCleanupWarnings.length ? ' Unused uploads could not be removed: ' + uploadCleanupWarnings.join('; ') : ''), true);
       return;
     }
-    var cleanupWarning = '';
-    if (newlyUploadedImage && currentProductImage && currentProductImage !== newlyUploadedImage) {
-      var cleanup = await SSPH_DB.adminRemoveProductImage(currentProductImage);
-      if (!cleanup.ok) cleanupWarning = ' Product saved, but the previous image could not be removed: ' + cleanup.error;
+    var cleanupWarnings = [];
+    var newImagePaths = [imagePath].concat(Object.keys(colorImages).map(function (color) { return colorImages[color]; }));
+    var oldImages = [currentProductImage].concat(Object.keys(currentColorImages).map(function (color) { return currentColorImages[color]; }))
+      .filter(function (image, index, list) {
+        return image && list.indexOf(image) === index &&
+          newImagePaths.indexOf(image) < 0;
+      });
+    for (var oldImageIndex = 0; oldImageIndex < oldImages.length; oldImageIndex += 1) {
+      var removedOldImage = await SSPH_DB.adminRemoveProductImage(oldImages[oldImageIndex]);
+      if (!removedOldImage.ok) cleanupWarnings.push(removedOldImage.error);
     }
     resetProductForm();
     submit.disabled = false;
     await Promise.all([refreshInventory(), refreshDashboard(false)]);
-    showNotice((productId ? 'Product updated.' : 'Product added to the shop.') + cleanupWarning, !!cleanupWarning);
+    showNotice((productId ? 'Product updated.' : 'Product added to the shop.') +
+      (cleanupWarnings.length ? ' Some replaced images could not be removed: ' + cleanupWarnings.join('; ') : ''),
+      cleanupWarnings.length > 0);
   });
 
   document.getElementById('all-orders').addEventListener('click', async function (event) {

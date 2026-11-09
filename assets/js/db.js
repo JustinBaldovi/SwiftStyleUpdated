@@ -161,6 +161,10 @@
       price: Number(r.price), colors: r.colors || [], stock: r.stock,
       image: r.image && (r.image.indexOf('product-images/') === 0 || /^https?:\/\//i.test(r.image))
         ? productImageUrl(r.image) : r.image,
+      colorImages: Object.keys(r.color_images || {}).reduce(function (images, color) {
+        images[color] = productImageUrl(r.color_images[color]);
+        return images;
+      }, {}),
       fit: r.image_fit === 'contain' ? 'contain' : undefined,
       featured: r.is_featured, isNew: r.is_new
     };
@@ -333,10 +337,21 @@
     if (!Number.isInteger(stock) || stock < 0) return fail('Stock must be a whole number of zero or more.');
     if (['Men', 'Women', 'Children'].indexOf(p.gender) < 0) return fail('Choose a valid product audience.');
     if (String(p.description || '').length > 5000) return fail('Description must be 5,000 characters or fewer.');
+    var colors = Array.isArray(p.colors) ? p.colors
+      : String(p.colors || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    colors = colors.map(function (color) { return String(color).trim(); }).filter(Boolean);
+    if (new Set(colors.map(function (color) { return color.toLowerCase(); })).size !== colors.length) {
+      return fail('Each product color must be unique.');
+    }
+    var colorImages = {};
+    Object.keys(p.colorImages || {}).forEach(function (color) {
+      if (colors.indexOf(color) >= 0 && String(p.colorImages[color] || '').trim()) {
+        colorImages[color] = String(p.colorImages[color]).trim();
+      }
+    });
     var row = {
       category_id: categoryId, gender: p.gender, product_name: String(p.name).trim(), description: String(p.description || '').trim() || null,
-      price: price, colors: Array.isArray(p.colors) ? p.colors
-        : String(p.colors || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+      price: price, colors: colors, color_images: colorImages,
       stock: stock, image: p.image || null, image_fit: p.fit === 'contain' ? 'contain' : 'cover',
       is_featured: !!p.featured, is_new: !!p.isNew
     };
@@ -348,16 +363,19 @@
   }
   async function adminDeleteProduct(productId) {
     if (!Number.isSafeInteger(Number(productId)) || Number(productId) < 1) return fail('Invalid product ID.');
-    var existing = await sb.from('products').select('image').eq('product_id', productId).maybeSingle();
+    var existing = await sb.from('products').select('image, color_images').eq('product_id', productId).maybeSingle();
     if (existing.error) return fail(existing.error);
     if (!existing.data) return fail('Product was not found or you do not have permission to delete it.');
     var r = await sb.from('products').delete().eq('product_id', productId).select('product_id').maybeSingle();
     if (r.error) return fail(r.error);
     if (!r.data) return fail('Product was not found or you do not have permission to delete it.');
-    var image = existing.data.image || '';
-    if (image.indexOf('product-images/') === 0) {
-      var removed = await sb.storage.from('product-images').remove([image.slice('product-images/'.length)]);
-      if (removed.error) return ok({ warning: 'Product deleted, but its stored image could not be removed: ' + removed.error.message });
+    var images = [existing.data.image].concat(Object.values(existing.data.color_images || {}))
+      .filter(function (image, index, list) {
+        return image && image.indexOf('product-images/') === 0 && list.indexOf(image) === index;
+      }).map(function (image) { return image.slice('product-images/'.length); });
+    if (images.length) {
+      var removed = await sb.storage.from('product-images').remove(images);
+      if (removed.error) return ok({ warning: 'Product deleted, but some stored images could not be removed: ' + removed.error.message });
     }
     return ok({ warning: '' });
   }
