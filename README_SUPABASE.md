@@ -20,6 +20,7 @@ I can't reach yours — step 5 below is your smoke test.
 6. Run `supabase/04_owner_dashboard.sql` to add fulfillment statuses and owner payment-QR storage.
 7. Run `supabase/05_realtime_orders.sql` to publish order changes to Supabase Realtime.
 8. Run `supabase/07_admin_delete_orders.sql` to enable admin-only order deletion from the dashboard.
+   If Supabase reports `permission denied for table orders`, run `supabase/08_fix_admin_order_delete_permissions.sql`.
 9. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
@@ -80,6 +81,7 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
   Run `supabase/04_owner_dashboard.sql` on existing projects before using the dashboard.
 - Admins can permanently delete orders from the owner dashboard after confirmation. Related order items are deleted too;
   inventory is not restored. Run `supabase/07_admin_delete_orders.sql` on existing projects to enable this feature.
+  If the API reports a table permission error, apply `supabase/08_fix_admin_order_delete_permissions.sql`.
 - Customers can track purchases from `orders.html`. The customer page subscribes only to that customer's order changes;
   the owner dashboard subscribes to order changes allowed by admin RLS. Both pages refresh from the database when an
   order is created or its status changes, and use periodic refreshes as a reconnect fallback. Apply `supabase/05_realtime_orders.sql`
