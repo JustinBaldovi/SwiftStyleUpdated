@@ -13,7 +13,8 @@ I can't reach yours — step 5 below is your smoke test.
 3. **SQL Editor** → run, in this order: `supabase/01_schema.sql`, `supabase/02_seed.sql`.
 4. **Authentication → Users → Add user** → `admin@swiftstyleph.com` + a password, tick *Auto Confirm User*.
    Then run `supabase/03_make_admin.sql`.
-5. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+5. Run `supabase/04_owner_dashboard.sql` to add fulfillment statuses and owner payment-QR storage.
+6. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -68,6 +69,9 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
 - **Auth emails:** Facebook `a@gmail.com` → `a_at_gmail.com@facebook.local`, Instagram `x` → `x@instagram.local`. If Supabase ever rejects
   `.local`, change it in BOTH `public.auth_email_for()` (01_schema.sql) and `authEmailFor()` (db.js).
 - Product photos still load from `assets/img/`; moving them to Supabase Storage is optional.
+- The owner dashboard is at `owner.html` for accounts with the `admin` role. It shows sales totals and customer orders,
+  supports fulfillment updates (Preparing, Packaging, Ready for pickup, and more), and lets the owner save or download a payment QR code.
+  Run `supabase/04_owner_dashboard.sql` on existing projects before using the dashboard.
 
 ## 5. Smoke test
 

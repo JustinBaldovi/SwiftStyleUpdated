@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Owner Dashboard | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="owner-page container">
+  <div class="owner-heading">
+    <div>
+      <p class="owner-eyebrow">STORE MANAGEMENT</p>
+      <h1>Owner Dashboard</h1>
+      <p>Track sales, manage customer orders, and update your store profile.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" id="refresh-dashboard">Refresh data</button>
+  </div>
+
+  <p class="owner-notice" id="owner-notice" role="status" aria-live="polite"></p>
+
+  <nav class="owner-tabs" aria-label="Owner dashboard sections">
+    <button type="button" class="owner-tab active" data-panel="overview">Overview</button>
+    <button type="button" class="owner-tab" data-panel="orders">Orders</button>
+    <button type="button" class="owner-tab" data-panel="profile">Profile &amp; QR code</button>
+  </nav>
+
+  <section class="owner-panel" id="panel-overview">
+    <div class="owner-metrics" id="owner-metrics">
+      <article class="owner-metric"><span>Total sales</span><strong id="metric-revenue">—</strong><small>Excludes cancelled orders</small></article>
+      <article class="owner-metric"><span>Orders</span><strong id="metric-orders">—</strong><small>All-time orders</small></article>
+      <article class="owner-metric"><span>Customers</span><strong id="metric-customers">—</strong><small>Registered customers</small></article>
+      <article class="owner-metric"><span>Products</span><strong id="metric-products">—</strong><small>In the store catalog</small></article>
+    </div>
+    <div class="owner-card">
+      <div class="owner-card-heading">
+        <div><h2>Recent orders</h2><p>Customer purchases appear here after checkout.</p></div>
+        <button type="button" class="btn btn-secondary btn-small" data-open-panel="orders">View all orders</button>
+      </div>
+      <div class="owner-table-wrap">
+        <table class="owner-table">
+          <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody id="recent-orders"></tbody>
+        </table>
+      </div>
+      <p class="owner-empty" id="recent-empty" hidden>No orders have been placed yet.</p>
+    </div>
+  </section>
+
+  <section class="owner-panel" id="panel-orders" hidden>
+    <div class="owner-card">
+      <div class="owner-card-heading">
+        <div><h2>Customer orders</h2><p>Review delivery details and move each order through fulfillment.</p></div>
+      </div>
+      <div class="owner-table-wrap">
+        <table class="owner-table owner-orders-table">
+          <thead><tr><th>Order details</th><th>Customer &amp; delivery</th><th>Payment</th><th>Total</th><th>Update status</th></tr></thead>
+          <tbody id="all-orders"></tbody>
+        </table>
+      </div>
+      <p class="owner-empty" id="orders-empty" hidden>No orders have been placed yet.</p>
+    </div>
+  </section>
+
+  <section class="owner-panel" id="panel-profile" hidden>
+    <div class="owner-profile-grid">
+      <form class="owner-card owner-form" id="profile-form">
+        <h2>Owner profile</h2>
+        <p>Update the contact details associated with your owner account.</p>
+        <label for="profile-name">Full name</label>
+        <input id="profile-name" name="fullName" type="text" required maxlength="120">
+        <label for="profile-email">Account email</label>
+        <input id="profile-email" name="email" type="email" readonly>
+        <label for="profile-phone">Phone number</label>
+        <input id="profile-phone" name="phone" type="tel" maxlength="40">
+        <label for="profile-address">Address</label>
+        <textarea id="profile-address" name="address" rows="3" maxlength="500"></textarea>
+        <button type="submit" class="btn">Save profile</button>
+      </form>
+
+      <form class="owner-card owner-form" id="qr-form">
+        <h2>Store payment QR code</h2>
+        <p>Add your GCash payment link or other payment text. Customers can scan the generated code to open it.</p>
+        <label for="qr-payload">Payment link or QR content</label>
+        <textarea id="qr-payload" name="payload" rows="3" maxlength="1000" placeholder="Paste your payment link or enter the text to encode"></textarea>
+        <div class="owner-qr-preview" id="qr-preview" aria-live="polite">
+          <p>Enter payment details and save to generate your QR code.</p>
+        </div>
+        <div class="owner-qr-actions">
+          <button type="submit" class="btn">Save QR code</button>
+          <button type="button" class="btn btn-secondary" id="download-qr" disabled>Download QR</button>
+        </div>
+        <small>Only save a payment link or text you trust. This QR code does not confirm or process payments.</small>
+      </form>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/owner.js"></script>
+</body>
+</html>

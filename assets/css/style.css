@@ -492,3 +492,72 @@ body.auth-bg main::after { content: ""; position: absolute; inset: 0; z-index: -
 
 /* Product photos that must be shown whole (never cropped) */
 img.fit-contain { object-fit: contain !important; background: #fff; }
+
+/* ---------------- Owner dashboard ---------------- */
+.owner-page { padding-top: 40px; padding-bottom: 64px; }
+.owner-heading, .owner-card-heading {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.owner-heading { margin-bottom: 28px; }
+.owner-heading h1 { font-size: 2rem; }
+.owner-heading p, .owner-card-heading p, .owner-form > p { color: var(--gray); margin-top: 4px; }
+.owner-eyebrow { color: var(--rust) !important; font-size: .75rem; font-weight: 800; letter-spacing: .12em; }
+.owner-notice { min-height: 24px; margin: 0 0 12px; color: var(--success); font-weight: 600; }
+.owner-notice.error, .status-feedback.error { color: var(--danger); }
+.owner-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.owner-tab { padding: 12px 18px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--gray); font: inherit; font-weight: 700; cursor: pointer; }
+.owner-tab.active { border-bottom-color: var(--rust); color: var(--rust); }
+.owner-panel[hidden] { display: none; }
+.owner-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+.owner-metric, .owner-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 8px 24px rgba(58,36,16,.06); }
+.owner-metric { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+.owner-metric > span { color: var(--gray); font-weight: 700; }
+.owner-metric strong { font-size: 1.65rem; }
+.owner-metric small, .owner-table small { color: var(--gray); }
+.owner-card { padding: 24px; }
+.owner-card h2, .owner-form h2 { font-size: 1.25rem; }
+.owner-table-wrap { width: 100%; overflow-x: auto; margin-top: 20px; }
+.owner-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 680px; }
+.owner-table th, .owner-table td { padding: 13px 12px; border-bottom: 1px solid #f2e8cc; vertical-align: top; }
+.owner-table th { color: var(--gray); font-size: .82rem; white-space: nowrap; }
+.owner-table td { font-size: .9rem; }
+.owner-table small { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+.owner-orders-table { min-width: 980px; }
+.owner-order-items { margin-top: 8px; color: var(--gray); font-size: .82rem; }
+.owner-status { display: inline-block; border-radius: 999px; padding: 4px 10px; background: #fff2d6; color: #82530a; font-size: .78rem; font-weight: 800; white-space: nowrap; }
+.status-packaging { background: #fce8d9; color: #97460c; }
+.status-ready-for-pickup, .status-shipped { background: #e4efff; color: #24518b; }
+.status-completed { background: #e3f7ea; color: #28643b; }
+.status-cancelled { background: #fce8e8; color: #a42b2b; }
+.owner-status-editor { display: flex; flex-wrap: wrap; gap: 7px; }
+.owner-status-editor select, .owner-form input, .owner-form textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--dark); font: inherit; background: #fff;
+}
+.owner-status-editor select { min-width: 145px; width: auto; }
+.status-feedback { display: block; margin-top: 5px; font-size: .78rem; color: var(--success); }
+.owner-empty { padding: 22px 0; color: var(--gray); text-align: center; }
+.owner-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 20px; }
+.owner-form { display: flex; flex-direction: column; gap: 10px; }
+.owner-form label { margin-top: 8px; font-weight: 700; }
+.owner-form input[readonly] { background: var(--light-bg); color: var(--gray); }
+.owner-form button { align-self: flex-start; margin-top: 8px; }
+.owner-qr-preview { min-height: 250px; margin-top: 8px; display: flex; align-items: center; justify-content: center; padding: 18px; border: 1px dashed var(--border); border-radius: 10px; background: #fffcf4; color: var(--gray); text-align: center; }
+.owner-qr-preview img { display: inline-block; }
+.owner-qr-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.owner-form > small { color: var(--gray); }
+@media (max-width: 850px) {
+  .owner-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .owner-profile-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .owner-page { padding-top: 26px; }
+  .owner-heading, .owner-card-heading { align-items: flex-start; flex-direction: column; }
+  .owner-heading h1 { font-size: 1.65rem; }
+  .owner-heading > .btn { align-self: stretch; text-align: center; }
+  .owner-tabs { gap: 0; overflow-x: auto; }
+  .owner-tab { padding: 11px 12px; white-space: nowrap; }
+  .owner-metrics { gap: 10px; }
+  .owner-metric, .owner-card { padding: 16px; }
+  .owner-metric strong { font-size: 1.25rem; }
+  .owner-metric small { font-size: .72rem; }
+}

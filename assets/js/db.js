@@ -72,6 +72,19 @@
     return ok(r.data);
   }
 
+  async function updateProfile(profile) {
+    var s = await sb.auth.getSession();
+    if (!s.data.session) return fail('Not signed in.');
+    var r = await sb.from('profiles').update({
+      full_name: String(profile.fullName || '').trim(),
+      phone: String(profile.phone || '').trim(),
+      address: String(profile.address || '').trim()
+    }).eq('id', s.data.session.user.id).select('*').single();
+    if (r.error) return fail(r.error);
+    mirrorUser(r.data);
+    return ok(r.data);
+  }
+
   /* provider: 'email' | 'facebook' | 'instagram'. mode of the old socialAuth() is split in two:
      signUp() = "Sign Up" (creates the account once), signIn() = "Log In". */
   async function signUp(provider, rawId, password, extra) {
@@ -233,14 +246,14 @@
   /* ---------------------------------------------------------------
      ADMIN  (the database refuses all of these unless profiles.role = 'admin')
      --------------------------------------------------------------- */
-  var ORDER_STATUSES = ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
+  var ORDER_STATUSES = ['Pending', 'Preparing', 'Packaging', 'Ready for pickup', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
 
   async function adminStats() {
     var r = await sb.rpc('admin_dashboard_stats');
     return r.error ? fail(r.error) : ok(r.data);
   }
   async function adminListOrders(limit) {
-    var q = sb.from('orders').select('*').order('created_at', { ascending: false });
+    var q = sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
     if (limit) q = q.limit(limit);
     var r = await q;
     return r.error ? fail(r.error) : ok(r.data);
@@ -248,6 +261,21 @@
   async function adminSetOrderStatus(orderId, status) {
     if (ORDER_STATUSES.indexOf(status) < 0) return fail('Invalid order status.');
     var r = await sb.from('orders').update({ order_status: status }).eq('order_id', orderId);
+    return r.error ? fail(r.error) : ok(true);
+  }
+  async function adminGetPaymentQr() {
+    var r = await sb.from('store_settings').select('value')
+      .eq('setting_key', 'payment_qr_payload').maybeSingle();
+    return r.error ? fail(r.error) : ok(r.data ? r.data.value : '');
+  }
+  async function adminSavePaymentQr(payload) {
+    payload = String(payload || '').trim();
+    if (payload.length > 1000) return fail('QR content must be 1,000 characters or fewer.');
+    var r = await sb.from('store_settings').upsert({
+      setting_key: 'payment_qr_payload',
+      value: payload,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'setting_key' });
     return r.error ? fail(r.error) : ok(true);
   }
   async function adminListProducts() {
@@ -275,11 +303,12 @@
 
   window.SSPH_DB = {
     client: sb, authEmailFor: authEmailFor,
-    signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, requireSession: requireSession,
+    signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, updateProfile: updateProfile, requireSession: requireSession,
     loadCatalog: loadCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
     placeOrder: placeOrder, myOrders: myOrders, getOrder: getOrder,
     adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus,
+    adminGetPaymentQr: adminGetPaymentQr, adminSavePaymentQr: adminSavePaymentQr,
     adminListProducts: adminListProducts, adminSaveProduct: adminSaveProduct, adminDeleteProduct: adminDeleteProduct,
     PAYMENT_METHODS: PAYMENT_METHODS, ORDER_STATUSES: ORDER_STATUSES
   };
