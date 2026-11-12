@@ -863,6 +863,10 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
 .customer-order-items li { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; }
 .customer-order-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .customer-order-meta span { color: var(--gray); overflow-wrap: anywhere; }
+.customer-order-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+.customer-order-cancel { padding: 8px 14px; border: 1px solid var(--danger); border-radius: 8px; background: #fff; color: var(--danger); font: inherit; font-size: .88rem; font-weight: 700; cursor: pointer; }
+.customer-order-cancel:hover:not(:disabled) { background: var(--danger); color: #fff; }
+.customer-order-cancel:disabled { opacity: .65; cursor: wait; }
 .customer-order-empty { text-align: center; padding: 48px 20px; }
 .customer-order-empty p { color: var(--gray); margin: 6px 0 18px; }
 @media (max-width: 600px) {

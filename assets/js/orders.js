@@ -37,8 +37,31 @@
         '<ul class="customer-order-items">' + items + '</ul>' +
         '<div class="customer-order-meta"><span>' + escapeHtml(order.payment_method) +
           ' · ' + escapeHtml(order.address) + '</span><strong>Total ' + formatPrice(order.total_amount) + '</strong></div>' +
+        (order.order_status === 'Pending'
+          ? '<div class="customer-order-actions"><button type="button" class="customer-order-cancel" data-order-id="' +
+            Number(order.order_id) + '">Cancel order</button></div>'
+          : '') +
         '</article>';
     }).join('');
+
+    list.querySelectorAll('.customer-order-cancel').forEach(function (button) {
+      button.addEventListener('click', async function () {
+        var orderId = Number(button.dataset.orderId);
+        if (!window.confirm('Cancel order #' + String(orderId).padStart(6, '0') + '? This cannot be undone.')) return;
+        button.disabled = true;
+        button.textContent = 'Cancelling…';
+        var result = await SSPH_DB.cancelMyOrder(orderId);
+        if (!result.ok) {
+          showError(result.error);
+          button.disabled = false;
+          button.textContent = 'Cancel order';
+          return;
+        }
+        await refreshOrders();
+        notice.textContent = 'Order #' + String(orderId).padStart(6, '0') + ' was cancelled.';
+        notice.className = 'owner-notice';
+      });
+    });
   }
 
   async function refreshOrders() {

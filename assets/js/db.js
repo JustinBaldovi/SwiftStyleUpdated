@@ -258,8 +258,20 @@
     return r.error ? fail(r.error) : ok(r.data);
   }
   async function myOrders() {
-    var r = await sb.from('orders').select('*').order('created_at', { ascending: false });
+    var r = await sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
     return r.error ? fail(r.error) : ok(r.data);
+  }
+  async function cancelMyOrder(orderId) {
+    orderId = Number(orderId);
+    if (!Number.isSafeInteger(orderId) || orderId < 1) return fail('Invalid order ID.');
+    var r = await sb.from('orders')
+      .update({ order_status: 'Cancelled' })
+      .eq('order_id', orderId)
+      .eq('order_status', 'Pending')
+      .select('order_id')
+      .maybeSingle();
+    if (r.error) return fail(r.error);
+    return r.data ? ok(true) : fail('This order could not be cancelled. It may no longer be pending, or customer cancellation has not been enabled yet.');
   }
   async function getOrder(orderId) {
     var r = await sb.from('orders').select('*, order_items(*)').eq('order_id', orderId).maybeSingle();
@@ -398,11 +410,14 @@
     if (/PGRST205|could not find the table ['"]?public\.product_reviews['"]? in the schema cache|relation ['"]?public\.product_reviews['"]? does not exist/i.test(message)) {
       return fail('Customer reviews are not set up in Supabase yet. Run supabase/10_inventory_reviews.sql in the SQL Editor, then reload this page.');
     }
+    if (/reviewer_name/i.test(message) && /PGRST204|schema cache|does not exist|not found/i.test(message)) {
+      return fail('Review names are not set up in Supabase yet. Run supabase/11_customer_order_cancellation_review_names.sql, then reload this page.');
+    }
     return fail(error);
   }
   async function listProductReviews(productId) {
     var r = await sb.from('product_reviews')
-      .select('review_id, product_id, user_id, rating, comment, created_at')
+      .select('review_id, product_id, user_id, reviewer_name, rating, comment, created_at')
       .eq('product_id', productId).order('created_at', { ascending: false }).limit(50);
     return r.error ? reviewError(r.error) : ok(r.data);
   }
@@ -433,7 +448,7 @@
   }
   async function adminListProductReviews(limit) {
     var q = sb.from('product_reviews')
-      .select('review_id, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
+      .select('review_id, reviewer_name, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
       .order('created_at', { ascending: false });
     if (limit) q = q.limit(limit);
     var r = await q;
@@ -465,7 +480,7 @@
     signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, updateProfile: updateProfile, requireSession: requireSession,
     loadCatalog: loadCatalog, watchCatalog: watchCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
-    placeOrder: placeOrder, myOrders: myOrders, getOrder: getOrder, watchOrders: watchOrders,
+    placeOrder: placeOrder, myOrders: myOrders, cancelMyOrder: cancelMyOrder, getOrder: getOrder, watchOrders: watchOrders,
     adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus, adminDeleteOrder: adminDeleteOrder,
     adminGetPaymentQr: adminGetPaymentQr, adminSavePaymentQr: adminSavePaymentQr,
     adminListProducts: adminListProducts, adminListCategories: adminListCategories,

@@ -135,7 +135,7 @@
         '<td><span class="review-stars" aria-label="' + Number(review.rating) + ' out of 5 stars">' +
           '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating)) +
           '</span><small>' + Number(review.rating) + '/5</small></td>' +
-        '<td>' + escapeHtml(profile.full_name || profile.email || 'Customer') +
+        '<td>' + escapeHtml(review.reviewer_name || profile.full_name || profile.email || 'Customer') +
           (profile.email ? '<small>' + escapeHtml(profile.email) + '</small>' : '') + '</td>' +
         '<td class="feedback-comment">' + escapeHtml(review.comment) + '</td>' +
         '<td>' + escapeHtml(dateLabel(review.created_at)) + '</td></tr>';
@@ -145,7 +145,7 @@
   async function refreshFeedback() {
     var result = await SSPH_DB.adminListProductReviews(200);
     if (!result.ok) {
-      showNotice('Could not load customer feedback. Run supabase/10_inventory_reviews.sql. Details: ' + result.error, true);
+      showNotice('Could not load customer feedback. Check supabase/10_inventory_reviews.sql and supabase/11_customer_order_cancellation_review_names.sql. Details: ' + result.error, true);
       return;
     }
     renderFeedback(result.data);
