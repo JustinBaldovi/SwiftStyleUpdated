@@ -470,6 +470,12 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
 .color-options input:checked + span { font-weight: 700; }
 .color-options label:has(input:checked) { border-color: var(--purple); background: #fbe9c6; }
 .qty-input { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+.product-purchase-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.product-purchase-actions .btn { flex: 1 1 180px; text-align: center; }
+.product-purchase-actions .btn:disabled { opacity: .7; cursor: wait; }
+.product-purchase-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.product-purchase-actions .btn { flex: 1 1 180px; text-align: center; }
+.product-purchase-actions .btn:disabled { opacity: .7; cursor: wait; }
 .stock-note { color: var(--gray); font-size: .9rem; margin-bottom: 16px; }
 .product-reviews { margin-top: 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 16px; background: linear-gradient(135deg, #fffdf8, #fff); box-shadow: 0 10px 28px rgba(58,36,16,.06); }
 .product-reviews-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; }
@@ -497,6 +503,18 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
 .product-review-meta time { color: var(--gray); font-size: .82rem; }
 .review-customer { color: var(--gray); font-size: .78rem; font-weight: 650; }
 .product-review > p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.product-review-reply { margin-top: 9px; padding: 9px 11px; border-left: 3px solid var(--gold); border-radius: 0 7px 7px 0; background: #fffbef; }
+.product-review-reply strong { display: block; margin-bottom: 3px; font-size: .82rem; color: var(--rust); }
+.product-review-reply p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.feedback-reply { display: grid; min-width: 220px; gap: 6px; }
+.feedback-reply-input { width: 100%; min-height: 64px; resize: vertical; padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px; color: var(--dark); font: inherit; }
+.feedback-reply .btn { justify-self: start; }
+.feedback-reply-status { color: var(--gray); overflow-wrap: anywhere; }
+.feedback-reply-status.error { color: var(--danger); }
+.feedback-reply-status.success { color: var(--success); }
+.product-review-reply { margin-top: 9px; padding: 9px 11px; border-left: 3px solid var(--gold); border-radius: 0 7px 7px 0; background: #fffbef; }
+.product-review-reply strong { display: block; margin-bottom: 3px; font-size: .82rem; color: var(--rust); }
+.product-review-reply p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .review-stars { color: #b66b00; letter-spacing: .08em; font-weight: 800; white-space: nowrap; }
 .product-review-list:empty::before { content: "No reviews yet. Be the first to share feedback."; color: var(--gray); padding: 18px; text-align: center; }
 #product-section { padding-top: 24px; padding-bottom: 40px; }

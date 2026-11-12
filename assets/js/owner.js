@@ -139,8 +139,36 @@
         '<td>' + escapeHtml(review.reviewer_name || profile.full_name || profile.email || 'Customer') +
           (profile.email ? '<small>' + escapeHtml(profile.email) + '</small>' : '') + '</td>' +
         '<td class="feedback-comment">' + escapeHtml(review.comment) + '</td>' +
-        '<td>' + escapeHtml(dateLabel(review.created_at)) + '</td></tr>';
+        '<td>' + escapeHtml(dateLabel(review.created_at)) + '</td>' +
+        '<td><div class="feedback-reply">' +
+          '<textarea class="feedback-reply-input" data-review-id="' + Number(review.review_id) +
+            '" maxlength="1500" rows="3" aria-label="Reply to review by ' +
+            escapeHtml(review.reviewer_name || profile.full_name || 'Customer') + '" placeholder="Write a reply">' +
+            escapeHtml(review.owner_reply || '') + '</textarea>' +
+          '<button type="button" class="btn btn-small save-review-reply" data-review-id="' + Number(review.review_id) + '">' +
+            (review.owner_reply ? 'Update reply' : 'Reply') + '</button>' +
+          '<small class="feedback-reply-status" data-review-reply-status="' + Number(review.review_id) + '"></small>' +
+        '</div></td></tr>';
     }).join('');
+    document.querySelectorAll('.save-review-reply').forEach(function (button) {
+      button.addEventListener('click', async function () {
+        var reviewId = Number(button.dataset.reviewId);
+        var input = document.querySelector('.feedback-reply-input[data-review-id="' + reviewId + '"]');
+        var status = document.querySelector('[data-review-reply-status="' + reviewId + '"]');
+        button.disabled = true;
+        status.textContent = 'Saving…';
+        var result = await SSPH_DB.adminReplyToReview(reviewId, input.value);
+        button.disabled = false;
+        if (!result.ok) {
+          status.textContent = result.error;
+          status.className = 'feedback-reply-status error';
+          return;
+        }
+        status.textContent = 'Reply saved.';
+        status.className = 'feedback-reply-status success';
+        button.textContent = input.value.trim() ? 'Update reply' : 'Reply';
+      });
+    });
   }
 
   async function refreshFeedback() {
@@ -152,6 +180,9 @@
     renderFeedback(result.data);
     if (result.reviewerNamesAvailable === false) {
       showNotice('Customer reviews are visible, but reviewer names are not set up yet. Run supabase/11_customer_order_cancellation_review_names.sql.');
+    }
+    if (result.ownerRepliesAvailable === false) {
+      showNotice('Review replies need database setup. Run supabase/14_product_review_owner_replies.sql.');
     }
   }
 

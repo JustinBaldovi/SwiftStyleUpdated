@@ -28,12 +28,28 @@
 <script>
   appReady(async function () {
     const content = document.getElementById('checkout-content');
-    const res = await SSPH_DB.cartList();
-    const cart = res.ok ? res.data.filter(i => getProductById(i.productId)) : [];
-
-    if (!cart.length) {
-      window.location.href = 'cart.html';
-      return;
+    const directCheckout = qs('direct') === '1';
+    let directItem = null;
+    let cart = [];
+    if (directCheckout) {
+      const product = getProductById(Number(qs('product_id')));
+      const quantity = Number(qs('quantity'));
+      const color = qs('color') || '';
+      if (!product || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > product.stock ||
+          (product.colors.length > 0 && !color) ||
+          (color && !product.colors.includes(color))) {
+        content.innerHTML = '<p class="empty-state">This direct checkout link is invalid or the selected item is no longer available. <a href="shop.html">Return to the shop</a>.</p>';
+        return;
+      }
+      directItem = { productId: product.id, quantity: quantity, color: color };
+      cart = [{ productId: product.id, qty: quantity, color: color }];
+    } else {
+      const res = await SSPH_DB.cartList();
+      cart = res.ok ? res.data.filter(i => getProductById(i.productId)) : [];
+      if (!cart.length) {
+        window.location.href = 'cart.html';
+        return;
+      }
     }
 
     const user = getCurrentUser() || {};
@@ -146,8 +162,8 @@
       }
       btn.disabled = true;
       errEl.style.display = 'none';
-      // The database re-reads the cart, uses its own prices, checks stock and deducts it — all in one step.
-      const r = await SSPH_DB.placeOrder({
+      // The database uses its own prices and checks stock in the same transaction.
+      const orderDetails = {
         fullName: document.getElementById('full_name').value.trim(),
         email: document.getElementById('email').value.trim(),
         phone: document.getElementById('phone').value.trim(),
@@ -157,7 +173,10 @@
         postalCode: postalCode.value.trim(),
         deliveryNote: document.getElementById('delivery_note').value.trim(),
         paymentMethod: document.querySelector('input[name="payment_method"]:checked').value
-      });
+      };
+      const r = directItem
+        ? await SSPH_DB.placeDirectOrder(Object.assign(orderDetails, directItem))
+        : await SSPH_DB.placeOrder(orderDetails);
       if (r.ok) {
         window.location.href = 'order-success.html?order_id=' + r.data;
       } else {

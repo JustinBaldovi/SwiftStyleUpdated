@@ -34,7 +34,11 @@ I can't reach yours — step 5 below is your smoke test.
     the customer orders page.
 13. Run `supabase/13_checkout_structured_delivery_address.sql` to store the required address line, city,
     province, postal code, and optional delivery instructions with each new order.
-14. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+14. Run `supabase/14_product_review_owner_replies.sql` to let the owner reply to customer reviews. Replies are
+    visible beside the review on the product page; the database prevents customers from writing owner replies.
+15. Run `supabase/15_direct_product_checkout.sql` to enable the product-page **Proceed to Checkout** option.
+    It creates an order for only that product, checks and deducts stock atomically, and leaves the saved cart unchanged.
+16. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -91,7 +95,7 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
 - Product photos still load from `assets/img/`; moving them to Supabase Storage is optional.
 - The owner dashboard is at `owner.html` for accounts with the `admin` role. It shows sales totals and customer orders,
   supports fulfillment updates (Preparing, Packaging, Ready for pickup, and more), manages product inventory and images,
-  displays customer reviews, and lets the owner save or download a payment QR code.
+  displays customer reviews and allows owner replies, and lets the owner save or download a payment QR code.
   Run `supabase/04_owner_dashboard.sql` on existing projects before using the dashboard.
 - Customers can rate products from 1 to 5 stars and leave a comment on the product page. Each signed-in customer can submit
   one review per product; they can update their own review. Signed-in customers can see the latest 50 reviews for each
@@ -109,7 +113,8 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
 - Checkout requires a street/address line, city or municipality, province, and four-digit Philippine postal code.
   Customers may add optional delivery instructions; those instructions and the structured address are saved on the
   order and shown in owner dashboard order details. Apply `supabase/13_checkout_structured_delivery_address.sql`
-  before using the updated checkout.
+  before using the updated checkout. The product page's direct checkout option places only the selected product and
+  quantity without changing the saved cart; apply migration 15 to enable it. Apply migration 14 to enable owner replies.
 - Customers can track purchases from `orders.html`. The customer page subscribes only to that customer's order changes;
   the owner dashboard subscribes to order changes allowed by admin RLS. Both pages refresh from the database when an
   order is created or its status changes, and use periodic refreshes as a reconnect fallback. Apply `supabase/05_realtime_orders.sql`

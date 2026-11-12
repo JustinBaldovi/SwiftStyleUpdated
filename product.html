@@ -64,7 +64,10 @@
                   <label for="quantity">Quantity</label>
                   <input type="number" id="quantity" value="1" min="1" max="${product.stock}" class="qty-input">
                 </div>
-                <button type="submit" class="btn" id="add-btn">Add to Cart</button>
+                <div class="product-purchase-actions">
+                  <button type="submit" class="btn" id="add-btn">Add to Cart</button>
+                  <button type="button" class="btn btn-secondary" id="direct-checkout-btn">Proceed to Checkout</button>
+                </div>
                 <p id="add-msg" style="margin-top:12px; color:var(--success); font-weight:600; display:none;">Added to cart!</p>
               </form>
             ` : `<p class="stock-note" style="color:var(--danger); font-weight:700;">Out of Stock</p>`}
@@ -122,13 +125,21 @@
         if (result.reviewerNamesAvailable === false) {
           summary.textContent += ' · Run supabase/11_customer_order_cancellation_review_names.sql to show reviewer names.';
         }
+        if (result.ownerRepliesAvailable === false) {
+          summary.textContent += ' · Owner replies are not enabled in the database yet.';
+        }
         list.innerHTML = reviews.map(function (review) {
           return '<article class="product-review">' +
             '<div class="product-review-meta"><span class="review-stars" aria-label="' + Number(review.rating) +
               ' out of 5 stars">' + '★'.repeat(Number(review.rating)) + '☆'.repeat(5 - Number(review.rating)) +
               '</span><span class="review-customer">' + escapeHtml(review.reviewer_name || 'Customer') + '</span><time>' +
               escapeHtml(new Date(review.created_at).toLocaleDateString()) + '</time></div>' +
-            '<p>' + escapeHtml(review.comment) + '</p></article>';
+            '<p>' + escapeHtml(review.comment) + '</p>' +
+            (review.owner_reply
+              ? '<div class="product-review-reply"><strong>Reply from Swift Style PH</strong><p>' +
+                escapeHtml(review.owner_reply) + '</p></div>'
+              : '') +
+            '</article>';
         }).join('');
       }
 
@@ -216,6 +227,29 @@
         };
         mainImg.addEventListener('error', fallbackProductImage);
         const colorName = document.getElementById('color-name');
+        const directCheckoutButton = document.getElementById('direct-checkout-btn');
+        directCheckoutButton.addEventListener('click', function () {
+          const color = form.querySelector('input[name="color"]:checked');
+          const quantityInput = document.getElementById('quantity');
+          const qty = Number(quantityInput.value);
+          if (!Number.isInteger(qty) || qty < 1 || qty > product.stock) {
+            quantityInput.setCustomValidity('Enter a quantity from 1 to ' + product.stock + '.');
+            quantityInput.reportValidity();
+            quantityInput.addEventListener('input', function clearQuantityError() {
+              quantityInput.setCustomValidity('');
+              quantityInput.removeEventListener('input', clearQuantityError);
+            });
+            return;
+          }
+          const params = new URLSearchParams({
+            direct: '1',
+            product_id: String(product.id),
+            quantity: String(qty)
+          });
+          if (color) params.set('color', color.value);
+          directCheckoutButton.disabled = true;
+          window.location.href = 'checkout.html?' + params.toString();
+        });
         product.colors.forEach(function (color) {
           new Image().src = productImage(product, color);
         });

@@ -280,6 +280,42 @@
     });
     return r.error ? fail(r.error) : ok(r.data);
   }
+  async function placeDirectOrder(o) {
+    o = o || {};
+    var requiredAddress = [
+      ['address', 'Address line'],
+      ['city', 'City or municipality'],
+      ['province', 'Province'],
+      ['postalCode', 'Postal code']
+    ];
+    for (var i = 0; i < requiredAddress.length; i++) {
+      if (!String(o[requiredAddress[i][0]] || '').trim()) {
+        return fail(requiredAddress[i][1] + ' is required.');
+      }
+    }
+    if (!/^[0-9]{4}$/.test(String(o.postalCode).trim())) return fail('Enter a 4-digit Philippine postal code.');
+    var productId = Number(o.productId), quantity = Number(o.quantity);
+    if (!Number.isSafeInteger(productId) || productId < 1 ||
+        !Number.isSafeInteger(quantity) || quantity < 1) return fail('Choose a valid product quantity.');
+    if (String(o.address).trim().length > 250 ||
+        String(o.city).trim().length > 100 ||
+        String(o.province).trim().length > 100 ||
+        String(o.deliveryNote || '').trim().length > 500) {
+      return fail('Please shorten the delivery address or instructions and try again.');
+    }
+    var method = PAYMENT_METHODS.indexOf(o.paymentMethod) >= 0 ? o.paymentMethod : 'COD';
+    var r = await sb.rpc('place_direct_order', {
+      p_full_name: o.fullName, p_email: o.email, p_phone: o.phone,
+      p_address: o.address, p_city: o.city, p_province: o.province,
+      p_postal_code: o.postalCode, p_product_id: productId,
+      p_color: o.color || '', p_quantity: quantity,
+      p_delivery_note: o.deliveryNote || '', p_payment_method: method
+    });
+    if (r.error && /place_direct_order|PGRST202|schema cache/i.test(r.error.message || '')) {
+      return fail('Direct checkout is not enabled in the database yet. Run supabase/15_direct_product_checkout.sql in the Supabase SQL Editor.');
+    }
+    return r.error ? fail(r.error) : ok(r.data);
+  }
   async function myOrders() {
     var r = await sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
     return r.error ? fail(r.error) : ok(r.data);
@@ -447,8 +483,15 @@
   }
   async function listProductReviews(productId) {
     var r = await sb.from('product_reviews')
-      .select('review_id, product_id, user_id, reviewer_name, rating, comment, created_at')
+      .select('review_id, product_id, user_id, reviewer_name, owner_reply, owner_replied_at, rating, comment, created_at')
       .eq('product_id', productId).order('created_at', { ascending: false }).limit(50);
+    if (r.error && /owner_reply|owner_replied_at/i.test(r.error.message || '')) {
+      var named = await sb.from('product_reviews')
+        .select('review_id, product_id, user_id, reviewer_name, rating, comment, created_at')
+        .eq('product_id', productId).order('created_at', { ascending: false }).limit(50);
+      if (!named.error) return ok(named.data, { ownerRepliesAvailable: false });
+      r = named;
+    }
     if (missingReviewNameColumn(r.error)) {
       var legacy = await sb.from('product_reviews')
         .select('review_id, product_id, user_id, rating, comment, created_at')
@@ -456,7 +499,7 @@
       if (legacy.error) return reviewError(legacy.error);
       return ok(legacy.data.map(function (review) {
         return Object.assign({ reviewer_name: 'Customer' }, review);
-      }), { reviewerNamesAvailable: false });
+      }), { reviewerNamesAvailable: false, ownerRepliesAvailable: false });
     }
     return r.error ? reviewError(r.error) : ok(r.data);
   }
@@ -487,10 +530,19 @@
   }
   async function adminListProductReviews(limit) {
     var q = sb.from('product_reviews')
-      .select('review_id, reviewer_name, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
+      .select('review_id, reviewer_name, owner_reply, owner_replied_at, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
       .order('created_at', { ascending: false });
     if (limit) q = q.limit(limit);
     var r = await q;
+    if (r.error && /owner_reply|owner_replied_at/i.test(r.error.message || '')) {
+      var namedQuery = sb.from('product_reviews')
+        .select('review_id, reviewer_name, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
+        .order('created_at', { ascending: false });
+      if (limit) namedQuery = namedQuery.limit(limit);
+      var named = await namedQuery;
+      if (!named.error) return ok(named.data, { ownerRepliesAvailable: false });
+      r = named;
+    }
     if (missingReviewNameColumn(r.error)) {
       var legacyQuery = sb.from('product_reviews')
         .select('review_id, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
@@ -498,9 +550,26 @@
       if (limit) legacyQuery = legacyQuery.limit(limit);
       var legacy = await legacyQuery;
       if (legacy.error) return reviewError(legacy.error);
-      return ok(legacy.data, { reviewerNamesAvailable: false });
+      return ok(legacy.data, { reviewerNamesAvailable: false, ownerRepliesAvailable: false });
     }
     return r.error ? reviewError(r.error) : ok(r.data);
+  }
+  async function adminReplyToReview(reviewId, reply) {
+    reviewId = Number(reviewId);
+    reply = String(reply || '').trim();
+    if (!Number.isSafeInteger(reviewId) || reviewId < 1) return fail('Invalid review ID.');
+    if (reply.length > 1500) return fail('Replies must be 1,500 characters or fewer.');
+    var r = await sb.from('product_reviews').update({
+      owner_reply: reply || null,
+      owner_replied_at: reply ? new Date().toISOString() : null
+    }).eq('review_id', reviewId).select('review_id').maybeSingle();
+    if (r.error) {
+      if (/owner_reply|owner_replied_at/i.test(r.error.message || '')) {
+        return fail('Owner replies are not enabled in the database yet. Run supabase/14_product_review_owner_replies.sql.');
+      }
+      return fail(r.error);
+    }
+    return r.data ? ok(true) : fail('Review not found or the owner account cannot update it.');
   }
   async function watchProductReviews(productId, onChange, onStatus) {
     var session = await sb.auth.getSession();
@@ -528,14 +597,14 @@
     signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, updateProfile: updateProfile, requireSession: requireSession,
     loadCatalog: loadCatalog, watchCatalog: watchCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
-    placeOrder: placeOrder, myOrders: myOrders, cancelMyOrder: cancelMyOrder, getOrder: getOrder, watchOrders: watchOrders,
+    placeOrder: placeOrder, placeDirectOrder: placeDirectOrder, myOrders: myOrders, cancelMyOrder: cancelMyOrder, getOrder: getOrder, watchOrders: watchOrders,
     adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus, adminDeleteOrder: adminDeleteOrder,
     adminGetPaymentQr: adminGetPaymentQr, adminSavePaymentQr: adminSavePaymentQr,
     adminListProducts: adminListProducts, adminListCategories: adminListCategories,
     adminSaveProduct: adminSaveProduct, adminDeleteProduct: adminDeleteProduct,
     adminUploadProductImage: adminUploadProductImage, adminRemoveProductImage: adminRemoveProductImage,
     productImageUrl: productImageUrl, listProductReviews: listProductReviews, getMyProductReview: getMyProductReview,
-    submitProductReview: submitProductReview, adminListProductReviews: adminListProductReviews,
+    submitProductReview: submitProductReview, adminListProductReviews: adminListProductReviews, adminReplyToReview: adminReplyToReview,
     watchProductReviews: watchProductReviews, watchProductReviewsAdmin: watchProductReviewsAdmin,
     PAYMENT_METHODS: PAYMENT_METHODS, ORDER_STATUSES: ORDER_STATUSES
   };
