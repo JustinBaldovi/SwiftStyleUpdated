@@ -32,7 +32,9 @@ I can't reach yours — step 5 below is your smoke test.
     "Customer" label; run it to show each reviewer's display name or Instagram username.
 12. Run `supabase/12_fix_customer_order_cancellation.sql` to install the atomic cancellation function used by
     the customer orders page.
-13. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+13. Run `supabase/13_checkout_structured_delivery_address.sql` to store the required address line, city,
+    province, postal code, and optional delivery instructions with each new order.
+14. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -55,7 +57,7 @@ On each page, add before your page script (after `app.js`):
 | `gate.js` redirect | keep it, and also call `SSPH_DB.requireSession()` on protected pages |
 | `CATEGORIES` / `PRODUCTS` in data.js | `await SSPH_DB.loadCatalog()` — fills those same arrays in place, so render code is unchanged |
 | `getCart/addToCart/updateCartQty/removeFromCart` | `cartList / cartAdd / cartUpdate(cartId, qty) / cartRemove(cartId)` |
-| `saveOrder()` + `clearCart()` | `SSPH_DB.placeOrder({fullName,email,phone,address,paymentMethod})` → order id |
+| `saveOrder()` + `clearCart()` | `SSPH_DB.placeOrder({fullName,email,phone,address,city,province,postalCode,deliveryNote,paymentMethod})` → order id |
 | `getOrders()` | `myOrders()` / `getOrder(id)` (includes line items) |
 | PHP `admin/*.php` | `adminStats, adminListOrders, adminSetOrderStatus, adminListProducts, adminSaveProduct, adminDeleteProduct` |
 
@@ -104,6 +106,10 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
 - Customers can cancel an order only while its status is `Pending`; the database rejects cancellations after an owner
   advances the status. Apply migrations 11 and 12 to enable it. Product reviews show the author's saved display name
   (or Instagram username) to signed-in shoppers and owners.
+- Checkout requires a street/address line, city or municipality, province, and four-digit Philippine postal code.
+  Customers may add optional delivery instructions; those instructions and the structured address are saved on the
+  order and shown in owner dashboard order details. Apply `supabase/13_checkout_structured_delivery_address.sql`
+  before using the updated checkout.
 - Customers can track purchases from `orders.html`. The customer page subscribes only to that customer's order changes;
   the owner dashboard subscribes to order changes allowed by admin RLS. Both pages refresh from the database when an
   order is created or its status changes, and use periodic refreshes as a reconnect fallback. Apply `supabase/05_realtime_orders.sql`
@@ -115,3 +121,5 @@ Sign up (Email) → browse → add to cart → checkout → in the Table Editor,
 `products.stock` dropped. Sign in as admin → `SSPH_DB.adminStats()` in the browser console returns four numbers.
 Verify a customer can cancel a `Pending` order, but cannot cancel one after the owner advances its status. Submit a
 product review and confirm its reviewer name appears on the product page and in the owner feedback panel.
+On checkout, verify leaving any required address field blank or entering a non-4-digit postal code blocks submission;
+then place a test order with optional delivery instructions and confirm the owner dashboard shows them.

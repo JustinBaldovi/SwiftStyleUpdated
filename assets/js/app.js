@@ -6,6 +6,13 @@ const IMG_PLACEHOLDER = 'assets/img/placeholder.svg';
 function formatPrice(amount) {
   return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+function formatOrderAddress(order) {
+  return [
+    order.address,
+    [order.delivery_city, order.delivery_province].filter(Boolean).join(', '),
+    order.postal_code ? 'Postal code ' + order.postal_code : ''
+  ].filter(Boolean).join(' · ');
+}
 function getProductById(id) {
   return PRODUCTS.find(p => p.id === Number(id));
 }

@@ -64,8 +64,30 @@
                 <input type="text" id="phone" value="${escapeHtml(user.phone || '')}" placeholder="09XXXXXXXXX" required>
               </div>
               <div class="form-group">
-                <label for="address">Complete Address</label>
-                <textarea id="address" rows="3" required>${escapeHtml(user.address || '')}</textarea>
+                <h3 class="delivery-address-heading">Delivery address</h3>
+                <label for="address">Address line</label>
+                <input type="text" id="address" maxlength="250" autocomplete="street-address"
+                  placeholder="House/building number, street, barangay" value="${escapeHtml(user.address || '')}" required>
+              </div>
+              <div class="delivery-address-grid">
+                <div class="form-group">
+                  <label for="city">City / Municipality</label>
+                  <input type="text" id="city" maxlength="100" autocomplete="address-level2" required>
+                </div>
+                <div class="form-group">
+                  <label for="province">Province</label>
+                  <input type="text" id="province" maxlength="100" autocomplete="address-level1" required>
+                </div>
+                <div class="form-group">
+                  <label for="postal_code">Postal code</label>
+                  <input type="text" id="postal_code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+                    autocomplete="postal-code" placeholder="4 digits" title="Enter a 4-digit Philippine postal code" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="delivery_note">Additional delivery instructions <span class="optional-label">(optional)</span></label>
+                <textarea id="delivery_note" rows="3" maxlength="500"
+                  placeholder="Landmark, subdivision, gate color, or other details to help the courier find you"></textarea>
               </div>
             </div>
 
@@ -98,6 +120,30 @@
       e.preventDefault();
       const btn = document.getElementById('place-btn');
       const errEl = document.getElementById('checkout-error');
+      const requiredFields = ['full_name', 'email', 'phone', 'address', 'city', 'province', 'postal_code'];
+      const missingField = requiredFields.find(function (id) {
+        return !document.getElementById(id).value.trim();
+      });
+      if (missingField) {
+        const field = document.getElementById(missingField);
+        field.setCustomValidity('Please complete this field.');
+        field.reportValidity();
+        field.addEventListener('input', function clearRequiredError() {
+          field.setCustomValidity('');
+          field.removeEventListener('input', clearRequiredError);
+        });
+        return;
+      }
+      const postalCode = document.getElementById('postal_code');
+      if (!/^[0-9]{4}$/.test(postalCode.value.trim())) {
+        postalCode.setCustomValidity('Enter a 4-digit Philippine postal code.');
+        postalCode.reportValidity();
+        postalCode.addEventListener('input', function clearPostalError() {
+          postalCode.setCustomValidity('');
+          postalCode.removeEventListener('input', clearPostalError);
+        });
+        return;
+      }
       btn.disabled = true;
       errEl.style.display = 'none';
       // The database re-reads the cart, uses its own prices, checks stock and deducts it — all in one step.
@@ -106,6 +152,10 @@
         email: document.getElementById('email').value.trim(),
         phone: document.getElementById('phone').value.trim(),
         address: document.getElementById('address').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        province: document.getElementById('province').value.trim(),
+        postalCode: postalCode.value.trim(),
+        deliveryNote: document.getElementById('delivery_note').value.trim(),
         paymentMethod: document.querySelector('input[name="payment_method"]:checked').value
       });
       if (r.ok) {

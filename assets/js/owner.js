@@ -62,7 +62,8 @@
         '<td><strong>#' + escapeHtml(String(order.order_id).padStart(6, '0')) + '</strong><small>' +
           escapeHtml(dateLabel(order.created_at)) + '</small><div class="owner-order-items">' + (items || 'Order details unavailable') + '</div></td>' +
         '<td><strong>' + escapeHtml(order.full_name) + '</strong><small>' + escapeHtml(order.email) + '</small>' +
-          '<small>' + escapeHtml(order.phone) + '</small><small>' + escapeHtml(order.address) + '</small></td>' +
+          '<small>' + escapeHtml(order.phone) + '</small><small>Delivery address: ' + escapeHtml(formatOrderAddress(order)) + '</small>' +
+          (order.delivery_note ? '<small><strong>Delivery instructions:</strong> ' + escapeHtml(order.delivery_note) + '</small>' : '') + '</td>' +
         '<td>' + escapeHtml(order.payment_method) + '</td>' +
         '<td><strong>' + formatPrice(order.total_amount) + '</strong></td>' +
         '<td><div class="owner-status-editor"><select class="order-status" data-order-id="' + Number(order.order_id) + '">' + options + '</select>' +

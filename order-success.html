@@ -48,7 +48,8 @@
         ${itemLines}
         <hr style="margin:14px 0; border-color:var(--border);">
         <div class="line"><span>Payment Method</span><span>${escapeHtml(order.payment_method)}</span></div>
-        <div class="line"><span>Shipping Address</span><span style="text-align:right; max-width:60%;">${escapeHtml(order.address)}</span></div>
+        <div class="line"><span>Shipping Address</span><span style="text-align:right; max-width:60%;">${escapeHtml(formatOrderAddress(order))}</span></div>
+        ${order.delivery_note ? `<div class="line"><span>Delivery Instructions</span><span style="text-align:right; max-width:60%;">${escapeHtml(order.delivery_note)}</span></div>` : ''}
         <div class="line total" style="font-weight:800; font-size:1.15rem; margin-top:10px;">
           <span>Total</span><span>${formatPrice(order.total_amount)}</span>
         </div>

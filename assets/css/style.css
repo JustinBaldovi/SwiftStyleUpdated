@@ -520,6 +520,9 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   font-size: 1rem;
   font-family: inherit;
 }
+.delivery-address-heading { font-size: 1.05rem; margin-bottom: 12px; }
+.delivery-address-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
+.optional-label { color: var(--gray); font-size: .82rem; font-weight: 400; }
 .form-note { text-align: center; margin-top: 16px; font-size: .9rem; color: var(--gray); }
 .form-note a { color: var(--purple); font-weight: 700; }
 
@@ -645,6 +648,9 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   .header-inner { grid-template-columns: minmax(0, 1fr) max-content; gap: 8px 16px; }
   .main-nav { grid-column: 1 / -1; grid-row: 2; justify-content: center; flex-wrap: wrap; }
   .nav-actions { grid-column: 2; grid-row: 1; }
+}
+@media (max-width: 520px) {
+  .delivery-address-grid { grid-template-columns: 1fr; gap: 0; }
 }
 @media (max-width: 600px) {
   #product-section { padding-top: 18px; }

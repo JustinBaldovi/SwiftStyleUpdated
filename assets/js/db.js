@@ -250,10 +250,33 @@
   /* Calls the place_order() database function: creates the order, snapshots the items at
      the DB's prices, deducts stock and empties the cart in ONE transaction. Returns the order id. */
   async function placeOrder(o) {
+    o = o || {};
+    var requiredAddress = [
+      ['address', 'Address line'],
+      ['city', 'City or municipality'],
+      ['province', 'Province'],
+      ['postalCode', 'Postal code']
+    ];
+    for (var i = 0; i < requiredAddress.length; i++) {
+      if (!String(o[requiredAddress[i][0]] || '').trim()) {
+        return fail(requiredAddress[i][1] + ' is required.');
+      }
+    }
+    if (!/^[0-9]{4}$/.test(String(o.postalCode).trim())) {
+      return fail('Enter a 4-digit Philippine postal code.');
+    }
+    if (String(o.address).trim().length > 250 ||
+        String(o.city).trim().length > 100 ||
+        String(o.province).trim().length > 100 ||
+        String(o.deliveryNote || '').trim().length > 500) {
+      return fail('Please shorten the delivery address or instructions and try again.');
+    }
     var method = PAYMENT_METHODS.indexOf(o.paymentMethod) >= 0 ? o.paymentMethod : 'COD';
     var r = await sb.rpc('place_order', {
       p_full_name: o.fullName, p_email: o.email, p_phone: o.phone,
-      p_address: o.address, p_payment_method: method
+      p_address: o.address, p_city: o.city, p_province: o.province,
+      p_postal_code: o.postalCode, p_delivery_note: o.deliveryNote || '',
+      p_payment_method: method
     });
     return r.error ? fail(r.error) : ok(r.data);
   }

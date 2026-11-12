@@ -36,7 +36,9 @@
           '<span class="owner-status ' + statusClass(order.order_status) + '">' + escapeHtml(order.order_status) + '</span></header>' +
         '<ul class="customer-order-items">' + items + '</ul>' +
         '<div class="customer-order-meta"><span>' + escapeHtml(order.payment_method) +
-          ' · ' + escapeHtml(order.address) + '</span><strong>Total ' + formatPrice(order.total_amount) + '</strong></div>' +
+          ' · ' + escapeHtml(formatOrderAddress(order)) +
+          (order.delivery_note ? ' · Instructions: ' + escapeHtml(order.delivery_note) : '') +
+          '</span><strong>Total ' + formatPrice(order.total_amount) + '</strong></div>' +
         (order.order_status === 'Pending'
           ? '<div class="customer-order-actions"><button type="button" class="customer-order-cancel" data-order-id="' +
             Number(order.order_id) + '">Cancel order</button></div>'
