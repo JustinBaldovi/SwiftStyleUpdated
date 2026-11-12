@@ -27,10 +27,11 @@ I can't reach yours — step 5 below is your smoke test.
 10. Run `supabase/10_inventory_reviews.sql` to enable admin inventory/image management and customer product reviews.
     It creates the public product-image bucket and review table with RLS; only admins can upload or change products.
     If the API reports `product_reviews` is missing from the schema cache, rerun this migration and reload the page.
-11. Run `supabase/11_customer_order_cancellation_review_names.sql` to let customers cancel only their own
-    still-pending orders and show reviewer names on product reviews. It tightens the orders UPDATE grant and
-    sets reviewer names in the database; it must be applied to the live project for these features to work.
-12. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+11. Run `supabase/11_customer_order_cancellation_review_names.sql` to add reviewer names and the pending-only
+    cancellation policy.
+12. Run `supabase/12_fix_customer_order_cancellation.sql` to install the atomic cancellation function used by
+    the customer orders page.
+13. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -100,8 +101,8 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
   inventory is not restored. Run `supabase/07_admin_delete_orders.sql` on existing projects to enable this feature.
   If the API reports a table permission error, apply `supabase/08_fix_admin_order_delete_permissions.sql`.
 - Customers can cancel an order only while its status is `Pending`; the database rejects cancellations after an owner
-  advances the status. Apply `supabase/11_customer_order_cancellation_review_names.sql` to enable it. Product reviews
-  show the author's saved display name (or Instagram username) to signed-in shoppers and owners.
+  advances the status. Apply migrations 11 and 12 to enable it. Product reviews show the author's saved display name
+  (or Instagram username) to signed-in shoppers and owners.
 - Customers can track purchases from `orders.html`. The customer page subscribes only to that customer's order changes;
   the owner dashboard subscribes to order changes allowed by admin RLS. Both pages refresh from the database when an
   order is created or its status changes, and use periodic refreshes as a reconnect fallback. Apply `supabase/05_realtime_orders.sql`

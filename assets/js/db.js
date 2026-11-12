@@ -264,14 +264,16 @@
   async function cancelMyOrder(orderId) {
     orderId = Number(orderId);
     if (!Number.isSafeInteger(orderId) || orderId < 1) return fail('Invalid order ID.');
-    var r = await sb.from('orders')
-      .update({ order_status: 'Cancelled' })
-      .eq('order_id', orderId)
-      .eq('order_status', 'Pending')
-      .select('order_id')
-      .maybeSingle();
-    if (r.error) return fail(r.error);
-    return r.data ? ok(true) : fail('This order could not be cancelled. It may no longer be pending, or customer cancellation has not been enabled yet.');
+    var r = await sb.rpc('cancel_my_order', { p_order_id: orderId });
+    if (r.error) {
+      if (/cancel_my_order|PGRST202|schema cache/i.test(r.error.message || '')) {
+        return fail('Order cancellation is not enabled in the database yet. Run supabase/12_fix_customer_order_cancellation.sql in the Supabase SQL Editor.');
+      }
+      return fail(r.error);
+    }
+    if (r.data === true) return ok(true);
+    if (r.data === false) return fail('This order can no longer be cancelled. Only orders that are still Pending can be cancelled.');
+    return fail('The cancellation could not be confirmed. Refresh your orders and try again.');
   }
   async function getOrder(orderId) {
     var r = await sb.from('orders').select('*, order_items(*)').eq('order_id', orderId).maybeSingle();
