@@ -25,7 +25,7 @@
     var msg = (error && error.message) ? error.message : String(error || 'Something went wrong.');
     return { ok: false, error: msg };
   }
-  function ok(data) { return { ok: true, data: data }; }
+  function ok(data, meta) { return Object.assign({ ok: true, data: data }, meta || {}); }
 
   /* ---------------------------------------------------------------
      Login identity -> internal Supabase auth email.
@@ -417,10 +417,24 @@
     }
     return fail(error);
   }
+  function missingReviewNameColumn(error) {
+    var message = error && error.message ? error.message : String(error || '');
+    return /reviewer_name/i.test(message) &&
+      /PGRST204|42703|schema cache|does not exist|not found|could not find/i.test(message);
+  }
   async function listProductReviews(productId) {
     var r = await sb.from('product_reviews')
       .select('review_id, product_id, user_id, reviewer_name, rating, comment, created_at')
       .eq('product_id', productId).order('created_at', { ascending: false }).limit(50);
+    if (missingReviewNameColumn(r.error)) {
+      var legacy = await sb.from('product_reviews')
+        .select('review_id, product_id, user_id, rating, comment, created_at')
+        .eq('product_id', productId).order('created_at', { ascending: false }).limit(50);
+      if (legacy.error) return reviewError(legacy.error);
+      return ok(legacy.data.map(function (review) {
+        return Object.assign({ reviewer_name: 'Customer' }, review);
+      }), { reviewerNamesAvailable: false });
+    }
     return r.error ? reviewError(r.error) : ok(r.data);
   }
   async function getMyProductReview(productId) {
@@ -454,6 +468,15 @@
       .order('created_at', { ascending: false });
     if (limit) q = q.limit(limit);
     var r = await q;
+    if (missingReviewNameColumn(r.error)) {
+      var legacyQuery = sb.from('product_reviews')
+        .select('review_id, rating, comment, created_at, profiles!product_reviews_user_id_fkey(full_name, email), products!product_reviews_product_id_fkey(product_name)')
+        .order('created_at', { ascending: false });
+      if (limit) legacyQuery = legacyQuery.limit(limit);
+      var legacy = await legacyQuery;
+      if (legacy.error) return reviewError(legacy.error);
+      return ok(legacy.data, { reviewerNamesAvailable: false });
+    }
     return r.error ? reviewError(r.error) : ok(r.data);
   }
   async function watchProductReviews(productId, onChange, onStatus) {

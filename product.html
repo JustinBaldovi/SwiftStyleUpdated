@@ -119,6 +119,9 @@
         summary.textContent = reviews.length
           ? average + ' out of 5 stars · ' + reviews.length + (reviews.length === 1 ? ' review' : ' reviews')
           : 'No reviews yet. Be the first to share your feedback.';
+        if (result.reviewerNamesAvailable === false) {
+          summary.textContent += ' · Run supabase/11_customer_order_cancellation_review_names.sql to show reviewer names.';
+        }
         list.innerHTML = reviews.map(function (review) {
           return '<article class="product-review">' +
             '<div class="product-review-meta"><span class="review-stars" aria-label="' + Number(review.rating) +

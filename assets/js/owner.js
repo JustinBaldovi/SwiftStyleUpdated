@@ -149,6 +149,9 @@
       return;
     }
     renderFeedback(result.data);
+    if (result.reviewerNamesAvailable === false) {
+      showNotice('Customer reviews are visible, but reviewer names are not set up yet. Run supabase/11_customer_order_cancellation_review_names.sql.');
+    }
   }
 
   function resetProductForm() {

@@ -28,7 +28,8 @@ I can't reach yours — step 5 below is your smoke test.
     It creates the public product-image bucket and review table with RLS; only admins can upload or change products.
     If the API reports `product_reviews` is missing from the schema cache, rerun this migration and reload the page.
 11. Run `supabase/11_customer_order_cancellation_review_names.sql` to add reviewer names and the pending-only
-    cancellation policy.
+    cancellation policy. If this migration has not been applied, existing reviews still load with a generic
+    "Customer" label; run it to show each reviewer's display name or Instagram username.
 12. Run `supabase/12_fix_customer_order_cancellation.sql` to install the atomic cancellation function used by
     the customer orders page.
 13. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
