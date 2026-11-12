@@ -575,8 +575,9 @@ function renderHeader() {
             <a href="orders.html" class="profile-menu-link">My orders</a>
             ${user.role === 'admin'
               ? '<a href="owner.html" class="profile-menu-link">Owner dashboard</a>' +
+                '<a href="owner.html#help-center" class="profile-menu-link">Help center</a>' +
                 '<a href="owner.html#profile" class="profile-menu-link">Owner profile &amp; QR</a>'
-              : ''}
+              : '<a href="inbox.html" class="profile-menu-link inbox-profile-link">Inbox<span class="inbox-notification-dot" aria-hidden="true" hidden></span></a>'}
             <button type="button" id="logout-link" class="profile-logout">Log out</button>
           </div>
         </div>
@@ -629,8 +630,8 @@ function renderHeader() {
   const badge = el.querySelector('.cart-badge');
   if (badge) SSPH_DB.cartCount().then(function (n) { badge.textContent = n; });
 
-  const inboxBadge = el.querySelector('.inbox-notification-dot');
-  if (inboxBadge && window.SSPH_DB) {
+  const inboxBadges = el.querySelectorAll('.inbox-notification-dot');
+  if (inboxBadges.length && window.SSPH_DB) {
     const supportBadgeToken = {};
     el._supportBadgeToken = supportBadgeToken;
     function refreshInboxBadge() {
@@ -639,9 +640,11 @@ function renderHeader() {
           console.error('[Inbox] Could not check for owner replies:', result.error);
           return;
         }
-        inboxBadge.hidden = result.data === 0;
-        inboxBadge.parentElement.setAttribute('aria-label',
-          result.data ? 'Inbox, ' + result.data + ' message replies need your attention' : 'Inbox');
+        inboxBadges.forEach(function (badge) {
+          badge.hidden = result.data === 0;
+          badge.parentElement.setAttribute('aria-label',
+            result.data ? 'Inbox, ' + result.data + ' message replies need your attention' : 'Inbox');
+        });
       });
     }
     if (el._supportBadgeTimer) window.clearInterval(el._supportBadgeTimer);

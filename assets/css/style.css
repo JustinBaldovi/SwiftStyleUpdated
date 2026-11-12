@@ -305,6 +305,8 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   transition: background .16s ease, color .16s ease;
 }
 .profile-menu-link:hover { background: #f8efd9; color: var(--rust); }
+.inbox-profile-link { position: relative; }
+.inbox-profile-link .inbox-notification-dot { top: 13px; right: 12px; border-color: #fffdf7; }
 .profile-logout {
   width: 100%;
   padding: 10px;
@@ -800,9 +802,10 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
 .owner-eyebrow { color: var(--rust) !important; font-size: .75rem; font-weight: 800; letter-spacing: .12em; }
 .owner-notice { min-height: 24px; margin: 0 0 12px; color: var(--success); font-weight: 600; }
 .owner-notice.error, .status-feedback.error { color: var(--danger); }
-.owner-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-.owner-tab { padding: 12px 18px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--gray); font: inherit; font-weight: 700; cursor: pointer; }
+.owner-tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.owner-tab { flex: 0 0 auto; padding: 12px 18px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--gray); font: inherit; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .owner-tab.active { border-bottom-color: var(--rust); color: var(--rust); }
+.owner-heading-actions { display: flex; gap: 10px; flex-wrap: wrap; flex: 0 0 auto; }
 .owner-panel[hidden] { display: none; }
 .owner-support-messages, .support-message-list { display: grid; gap: 16px; }
 .owner-support-card, .support-message-card, .support-empty {
@@ -903,9 +906,10 @@ img.fit-contain { object-fit: contain !important; background: #fff; }
   .owner-page { padding-top: 26px; }
   .owner-heading, .owner-card-heading { align-items: flex-start; flex-direction: column; }
   .owner-heading h1 { font-size: 1.65rem; }
-  .owner-heading > .btn { align-self: stretch; text-align: center; }
-  .owner-tabs { gap: 0; overflow-x: auto; }
-  .owner-tab { padding: 11px 12px; white-space: nowrap; }
+  .owner-heading-actions { width: 100%; }
+  .owner-heading-actions .btn { flex: 1; text-align: center; }
+  .owner-tabs { flex-wrap: nowrap; gap: 0; overflow-x: auto; }
+  .owner-tab { padding: 11px 12px; }
   .owner-metrics { gap: 10px; }
   .owner-metric, .owner-card { padding: 16px; }
   .owner-metric strong { font-size: 1.25rem; }

@@ -390,6 +390,10 @@
   document.querySelectorAll('[data-open-panel]').forEach(function (button) {
     button.addEventListener('click', function () { setPanel(button.dataset.openPanel); });
   });
+  document.getElementById('open-help-center').addEventListener('click', function () {
+    setPanel('help-center');
+    document.getElementById('panel-help-center').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   document.getElementById('refresh-dashboard').addEventListener('click', function () {
     showNotice('Refreshing dashboard…');
     Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback(), refreshSupportMessages()]);
