@@ -561,6 +561,7 @@ function renderHeader() {
           </label>
         </div>
         <a href="cart.html" class="cart-link">🛒 Cart<span class="cart-badge">${count}</span></a>
+        ${user.role === 'admin' ? '' : '<a href="inbox.html" class="inbox-nav-link" aria-label="Inbox">Inbox<span class="inbox-notification-dot" aria-hidden="true" hidden></span></a>'}
         <div class="profile-menu">
           <button type="button" class="profile-trigger" id="profile-trigger" aria-expanded="false"
             aria-controls="profile-dropdown" aria-haspopup="true"
@@ -627,6 +628,46 @@ function renderHeader() {
 
   const badge = el.querySelector('.cart-badge');
   if (badge) SSPH_DB.cartCount().then(function (n) { badge.textContent = n; });
+
+  const inboxBadge = el.querySelector('.inbox-notification-dot');
+  if (inboxBadge && window.SSPH_DB) {
+    const supportBadgeToken = {};
+    el._supportBadgeToken = supportBadgeToken;
+    function refreshInboxBadge() {
+      SSPH_DB.unreadSupportCount().then(function (result) {
+        if (!result.ok) {
+          console.error('[Inbox] Could not check for owner replies:', result.error);
+          return;
+        }
+        inboxBadge.hidden = result.data === 0;
+        inboxBadge.parentElement.setAttribute('aria-label',
+          result.data ? 'Inbox, ' + result.data + ' message replies need your attention' : 'Inbox');
+      });
+    }
+    if (el._supportBadgeTimer) window.clearInterval(el._supportBadgeTimer);
+    if (el._supportBadgeChannel) SSPH_DB.client.removeChannel(el._supportBadgeChannel);
+    if (el._supportBadgeVisibility) document.removeEventListener('visibilitychange', el._supportBadgeVisibility);
+    window.ssphRefreshInboxBadge = refreshInboxBadge;
+    refreshInboxBadge();
+    el._supportBadgeTimer = window.setInterval(function () {
+      if (!document.hidden) refreshInboxBadge();
+    }, 30000);
+    el._supportBadgeVisibility = function () {
+      if (!document.hidden) refreshInboxBadge();
+    };
+    document.addEventListener('visibilitychange', el._supportBadgeVisibility);
+    SSPH_DB.watchSupportMessages(false, refreshInboxBadge).then(function (result) {
+      if (!result.ok) {
+        console.error('[Inbox] Live notifications unavailable:', result.error);
+        return;
+      }
+      if (el._supportBadgeToken !== supportBadgeToken) {
+        SSPH_DB.client.removeChannel(result.data);
+      } else {
+        el._supportBadgeChannel = result.data;
+      }
+    });
+  }
 
   const profileTrigger = el.querySelector('#profile-trigger');
   const profileDropdown = el.querySelector('#profile-dropdown');

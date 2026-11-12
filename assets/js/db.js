@@ -353,6 +353,113 @@
   }
 
   /* ---------------------------------------------------------------
+     CUSTOMER SUPPORT MESSAGES
+     --------------------------------------------------------------- */
+  function supportError(error) {
+    if (/support_messages|PGRST205|schema cache/i.test(error && error.message || '')) {
+      return fail('The Help Center is not enabled in the database yet. Run supabase/16_customer_help_center.sql.');
+    }
+    return fail(error);
+  }
+  async function sendSupportMessage(subject, message) {
+    subject = String(subject || '').trim();
+    message = String(message || '').trim();
+    if (!subject || subject.length > 160) return fail('Enter a subject of 1 to 160 characters.');
+    if (!message || message.length > 5000) return fail('Write a message of 1 to 5,000 characters.');
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Please sign in before sending a message.');
+    var result = await sb.from('support_messages').insert({
+      user_id: session.data.session.user.id,
+      subject: subject,
+      message: message
+    }).select('message_id').single();
+    if (result.error) return supportError(result.error);
+    return ok(result.data);
+  }
+  async function mySupportMessages() {
+    var result = await sb.from('support_messages')
+      .select('message_id, subject, message, created_at, owner_reply, owner_replied_at, reply_seen_at, rating, rated_at')
+      .order('created_at', { ascending: false });
+    if (result.error) return supportError(result.error);
+    return ok(result.data);
+  }
+  async function markSupportReplySeen(messageId) {
+    messageId = Number(messageId);
+    if (!Number.isSafeInteger(messageId) || messageId < 1) return fail('Invalid message ID.');
+    var result = await sb.from('support_messages').update({ reply_seen_at: new Date().toISOString() })
+      .eq('message_id', messageId).is('reply_seen_at', null).not('owner_reply', 'is', null)
+      .select('message_id').maybeSingle();
+    return result.error ? supportError(result.error) : ok(!!result.data);
+  }
+  async function rateSupportReply(messageId, rating) {
+    messageId = Number(messageId);
+    rating = Number(rating);
+    if (!Number.isSafeInteger(messageId) || messageId < 1) return fail('Invalid message ID.');
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) return fail('Choose a rating from 1 to 5 stars.');
+    var result = await sb.from('support_messages').update({
+      rating: rating, rated_at: new Date().toISOString()
+    }).eq('message_id', messageId).is('rating', null).not('owner_reply', 'is', null)
+      .not('reply_seen_at', 'is', null).select('message_id').maybeSingle();
+    if (result.error) return supportError(result.error);
+    return result.data ? ok(true) : fail('Open the owner reply before rating it. A response can only be rated once.');
+  }
+  async function deleteMySupportMessage(messageId) {
+    messageId = Number(messageId);
+    if (!Number.isSafeInteger(messageId) || messageId < 1) return fail('Invalid message ID.');
+    var result = await sb.from('support_messages').delete().eq('message_id', messageId)
+      .select('message_id').maybeSingle();
+    if (result.error) return supportError(result.error);
+    return result.data ? ok(true) : fail('You can delete a message only after the owner has replied and you have rated the response.');
+  }
+  async function adminListSupportMessages(limit) {
+    var query = sb.from('support_messages')
+      .select('message_id, user_id, customer_name, customer_email, subject, message, created_at, owner_reply, owner_replied_at, reply_seen_at, rating, rated_at')
+      .order('created_at', { ascending: false });
+    if (limit) query = query.limit(limit);
+    var result = await query;
+    if (result.error) return supportError(result.error);
+    return ok(result.data);
+  }
+  async function adminReplyToSupportMessage(messageId, reply) {
+    messageId = Number(messageId);
+    reply = String(reply || '').trim();
+    if (!Number.isSafeInteger(messageId) || messageId < 1) return fail('Invalid message ID.');
+    if (!reply || reply.length > 5000) return fail('Write a reply of 1 to 5,000 characters.');
+    var result = await sb.from('support_messages').update({ owner_reply: reply })
+      .eq('message_id', messageId).select('message_id').maybeSingle();
+    if (result.error) return supportError(result.error);
+    return result.data ? ok(true) : fail('Message not found or you do not have permission to reply.');
+  }
+  async function adminDeleteSupportMessage(messageId) {
+    messageId = Number(messageId);
+    if (!Number.isSafeInteger(messageId) || messageId < 1) return fail('Invalid message ID.');
+    var result = await sb.from('support_messages').delete().eq('message_id', messageId)
+      .select('message_id').maybeSingle();
+    if (result.error) return supportError(result.error);
+    return result.data ? ok(true) : fail('Message not found or you do not have permission to delete it.');
+  }
+  async function unreadSupportCount() {
+    var result = await sb.from('support_messages').select('message_id', { count: 'exact', head: true })
+      .not('owner_reply', 'is', null).or('reply_seen_at.is.null,rating.is.null');
+    if (result.error) return supportError(result.error);
+    return ok(result.count || 0);
+  }
+  async function watchSupportMessages(isOwner, onChange, onStatus) {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Not signed in.');
+    var userId = session.data.session.user.id;
+    var config = { event: '*', schema: 'public', table: 'support_messages' };
+    if (!isOwner) config.filter = 'user_id=eq.' + userId;
+    var channel = sb.channel('support-messages-' + (isOwner ? 'owner-' : 'customer-') + userId + '-' +
+      Math.random().toString(36).slice(2))
+      .on('postgres_changes', config, onChange)
+      .subscribe(onStatus);
+    return ok(channel);
+  }
+
+  /* ---------------------------------------------------------------
      ADMIN  (the database refuses all of these unless profiles.role = 'admin')
      --------------------------------------------------------------- */
   var ORDER_STATUSES = ['Pending', 'Preparing', 'Packaging', 'Ready for pickup', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
@@ -598,6 +705,11 @@
     loadCatalog: loadCatalog, watchCatalog: watchCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
     placeOrder: placeOrder, placeDirectOrder: placeDirectOrder, myOrders: myOrders, cancelMyOrder: cancelMyOrder, getOrder: getOrder, watchOrders: watchOrders,
+    sendSupportMessage: sendSupportMessage, mySupportMessages: mySupportMessages,
+    markSupportReplySeen: markSupportReplySeen, rateSupportReply: rateSupportReply,
+    deleteMySupportMessage: deleteMySupportMessage, adminListSupportMessages: adminListSupportMessages,
+    adminReplyToSupportMessage: adminReplyToSupportMessage, adminDeleteSupportMessage: adminDeleteSupportMessage,
+    unreadSupportCount: unreadSupportCount, watchSupportMessages: watchSupportMessages,
     adminStats: adminStats, adminListOrders: adminListOrders, adminSetOrderStatus: adminSetOrderStatus, adminDeleteOrder: adminDeleteOrder,
     adminGetPaymentQr: adminGetPaymentQr, adminSavePaymentQr: adminSavePaymentQr,
     adminListProducts: adminListProducts, adminListCategories: adminListCategories,

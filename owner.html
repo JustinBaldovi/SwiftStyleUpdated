@@ -32,6 +32,7 @@
     <button type="button" class="owner-tab" data-panel="orders">Orders</button>
     <button type="button" class="owner-tab" data-panel="inventory">Inventory</button>
     <button type="button" class="owner-tab" data-panel="feedback">Feedback</button>
+    <button type="button" class="owner-tab" data-panel="help-center">Help center</button>
     <button type="button" class="owner-tab" data-panel="profile">Profile &amp; QR code</button>
   </nav>
 
@@ -152,6 +153,16 @@
         </table>
       </div>
       <p class="owner-empty" id="feedback-empty" hidden>No customer feedback yet.</p>
+    </div>
+  </section>
+
+  <section class="owner-panel" id="panel-help-center" hidden>
+    <div class="owner-card">
+      <div class="owner-card-heading">
+        <div><h2>Customer messages</h2><p>Reply to customer concerns and review their satisfaction ratings.</p></div>
+      </div>
+      <p class="owner-empty" id="support-messages-empty" hidden>No customer messages yet.</p>
+      <div class="owner-support-messages" id="owner-support-messages" aria-live="polite"></div>
     </div>
   </section>
 

@@ -186,6 +186,47 @@
     }
   }
 
+  function renderSupportMessages(messages) {
+    document.getElementById('support-messages-empty').hidden = messages.length > 0;
+    document.getElementById('owner-support-messages').innerHTML = messages.map(function (item) {
+      var rating = Number(item.rating);
+      var ratingDisplay = rating >= 1 && rating <= 5
+        ? '<span class="review-stars" aria-label="' + rating + ' out of 5 stars">' +
+          '★'.repeat(rating) + '☆'.repeat(5 - rating) + '</span><small>' + rating + '/5 · ' +
+          escapeHtml(dateLabel(item.rated_at)) + '</small>'
+        : '<span class="support-not-rated">Not rated yet</span>';
+      return '<article class="owner-support-card" data-support-id="' + Number(item.message_id) + '">' +
+        '<div class="support-message-heading"><div><p class="owner-eyebrow">MESSAGE · ' +
+        escapeHtml(dateLabel(item.created_at)) + '</p><h3>' + escapeHtml(item.subject) + '</h3></div>' +
+        '<div class="support-customer"><strong>' + escapeHtml(item.customer_name || 'Customer') + '</strong>' +
+        (item.customer_email ? '<a href="mailto:' + escapeHtml(item.customer_email) + '">' +
+          escapeHtml(item.customer_email) + '</a>' : '') + '</div></div>' +
+        '<p class="support-message-body">' + escapeHtml(item.message) + '</p>' +
+        '<div class="owner-support-footer"><div><strong>Customer rating</strong>' + ratingDisplay + '</div>' +
+        (item.reply_seen_at ? '<small>Customer viewed the reply</small>' :
+          (item.owner_reply ? '<small>Waiting for customer to view and rate the reply</small>' : '')) +
+        '</div><label class="support-owner-reply-label" for="owner-reply-' + Number(item.message_id) + '">Your reply</label>' +
+        '<textarea class="support-owner-reply" id="owner-reply-' + Number(item.message_id) +
+          '" maxlength="5000" rows="4" placeholder="Write a helpful response">' +
+          escapeHtml(item.owner_reply || '') + '</textarea>' +
+        '<div class="support-message-actions"><button type="button" class="btn btn-small save-support-reply" data-message-id="' +
+          Number(item.message_id) + '">' + (item.owner_reply ? 'Update reply' : 'Send reply') +
+          '</button><button type="button" class="btn btn-secondary btn-small delete-support-message" data-message-id="' +
+          Number(item.message_id) + '">Delete message</button>' +
+          '<span class="support-action-status" data-support-status="' + Number(item.message_id) + '" role="status"></span></div>' +
+        '</article>';
+    }).join('');
+  }
+
+  async function refreshSupportMessages() {
+    var result = await SSPH_DB.adminListSupportMessages(200);
+    if (!result.ok) {
+      showNotice('Could not load Help Center messages. Run supabase/16_customer_help_center.sql. Details: ' + result.error, true);
+      return;
+    }
+    renderSupportMessages(result.data);
+  }
+
   function resetProductForm() {
     var form = document.getElementById('product-form');
     form.reset();
@@ -309,7 +350,7 @@
       document.getElementById('qr-payload').value = qr.data;
       renderQr(qr.data);
     }
-    await Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
+    await Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback(), refreshSupportMessages()]);
     if (!qr.ok) showNotice('Could not load the payment QR setting. Run supabase/04_owner_dashboard.sql.', true);
     var subscription = await SSPH_DB.watchOrders(true, scheduleRefresh, function (status, error) {
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -326,6 +367,12 @@
       }
     });
     if (!reviewSubscription.ok) showNotice('Live customer feedback updates unavailable: ' + reviewSubscription.error, true);
+    var supportSubscription = await SSPH_DB.watchSupportMessages(true, refreshSupportMessages, function (status, error) {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        showNotice('Live Help Center updates disconnected. ' + (error || ''), true);
+      }
+    });
+    if (!supportSubscription.ok) showNotice('Live Help Center updates unavailable: ' + supportSubscription.error, true);
     var catalogSubscription = await SSPH_DB.watchCatalog(function () {
       Promise.all([refreshInventory(), refreshDashboard(false)]);
     }, function (status, error) {
@@ -345,7 +392,51 @@
   });
   document.getElementById('refresh-dashboard').addEventListener('click', function () {
     showNotice('Refreshing dashboard…');
-    Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
+    Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback(), refreshSupportMessages()]);
+  });
+
+  document.getElementById('owner-support-messages').addEventListener('input', function (event) {
+    if (event.target.matches('.support-owner-reply')) event.target.setCustomValidity('');
+  });
+  document.getElementById('owner-support-messages').addEventListener('click', async function (event) {
+    var replyButton = event.target.closest('.save-support-reply');
+    var deleteButton = event.target.closest('.delete-support-message');
+    var messageId = Number((replyButton || deleteButton || {}).dataset &&
+      (replyButton || deleteButton).dataset.messageId);
+    if (!messageId) return;
+    var status = document.querySelector('[data-support-status="' + messageId + '"]');
+    if (replyButton) {
+      var input = document.getElementById('owner-reply-' + messageId);
+      if (!input.value.trim()) {
+        input.setCustomValidity('Write a reply before sending.');
+        input.reportValidity();
+        return;
+      }
+      replyButton.disabled = true;
+      status.textContent = 'Sending…';
+      var replyResult = await SSPH_DB.adminReplyToSupportMessage(messageId, input.value);
+      replyButton.disabled = false;
+      if (!replyResult.ok) {
+        status.textContent = replyResult.error;
+        status.className = 'support-action-status error';
+        return;
+      }
+      showNotice('Customer message replied to.');
+      await refreshSupportMessages();
+      return;
+    }
+    if (!window.confirm('Permanently delete this customer message and its reply? This cannot be undone.')) return;
+    deleteButton.disabled = true;
+    status.textContent = 'Deleting…';
+    var deleteResult = await SSPH_DB.adminDeleteSupportMessage(messageId);
+    if (!deleteResult.ok) {
+      deleteButton.disabled = false;
+      status.textContent = deleteResult.error;
+      status.className = 'support-action-status error';
+      return;
+    }
+    showNotice('Customer message deleted.');
+    await refreshSupportMessages();
   });
 
   document.getElementById('product-image').addEventListener('change', function () {
@@ -541,9 +632,9 @@
 
   loadOwner();
   window.setInterval(function () {
-    if (!document.hidden) Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
+    if (!document.hidden) Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback(), refreshSupportMessages()]);
   }, 30000);
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback()]);
+    if (!document.hidden) Promise.all([refreshDashboard(false), refreshInventory(), refreshFeedback(), refreshSupportMessages()]);
   });
 })();

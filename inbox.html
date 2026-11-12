@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inbox | Swift Style PH</title>
+<script src="assets/js/gate.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/db.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="container inbox-page">
+  <div class="customer-orders-heading">
+    <div>
+      <p class="owner-eyebrow">YOUR ACCOUNT</p>
+      <h1>Inbox</h1>
+      <p>Read replies from Swift Style PH, rate the support you received, and manage your messages.</p>
+    </div>
+    <span class="live-indicator" id="inbox-live-status">Connecting to live updates…</span>
+  </div>
+  <p class="owner-notice" id="inbox-notice" role="status" aria-live="polite"></p>
+  <section class="support-message-list" id="customer-support-messages" aria-live="polite"></section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/inbox.js"></script>
+</body>
+</html>

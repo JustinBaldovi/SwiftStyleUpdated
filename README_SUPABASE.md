@@ -38,7 +38,9 @@ I can't reach yours — step 5 below is your smoke test.
     visible beside the review on the product page; the database prevents customers from writing owner replies.
 15. Run `supabase/15_direct_product_checkout.sql` to enable the product-page **Proceed to Checkout** option.
     It creates an order for only that product, checks and deducts stock atomically, and leaves the saved cart unchanged.
-16. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+16. Run `supabase/16_customer_help_center.sql` to enable customer messages, owner Help Center replies,
+    customer response ratings, inbox notifications, and the post-rating delete rule.
+17. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -115,6 +117,10 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
   order and shown in owner dashboard order details. Apply `supabase/13_checkout_structured_delivery_address.sql`
   before using the updated checkout. The product page's direct checkout option places only the selected product and
   quantity without changing the saved cart; apply migration 15 to enable it. Apply migration 14 to enable owner replies.
+- Customers send messages through Contact Us and track owner responses in their Inbox. The owner can reply to or delete
+  messages from the Help Center dashboard tab; customers can rate a response from 1 to 5 stars and delete their message
+  after rating. Inbox notifications remain visible until the customer has viewed and rated the reply. Apply migration 16
+  to enable the feature.
 - Customers can track purchases from `orders.html`. The customer page subscribes only to that customer's order changes;
   the owner dashboard subscribes to order changes allowed by admin RLS. Both pages refresh from the database when an
   order is created or its status changes, and use periodic refreshes as a reconnect fallback. Apply `supabase/05_realtime_orders.sql`
