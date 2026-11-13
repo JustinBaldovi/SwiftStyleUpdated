@@ -699,30 +699,9 @@
     return ok(channel);
   }
 
-  async function productRatings() {
-    var session = await sb.auth.getSession();
-    if (session.error) return fail(session.error);
-    var result = await sb.from('product_ratings').select('product_id, user_id, rating');
-    return result.error ? fail(result.error) : ok({
-      ratings: result.data,
-      userId: session.data.session ? session.data.session.user.id : ''
-    });
-  }
-  async function rateProduct(productId, rating) {
-    var session = await sb.auth.getSession();
-    if (session.error) return fail(session.error);
-    if (!session.data.session) return fail('Please sign in first.');
-    rating = Number(rating);
-    productId = Number(productId);
-    if (!Number.isSafeInteger(productId) || productId < 1) return fail('Invalid product.');
-    if (!Number.isInteger(rating) || rating < 1 || rating > 5) return fail('Choose a rating from 1 to 5 stars.');
-    var result = await sb.from('product_ratings').upsert({
-      product_id: productId,
-      user_id: session.data.session.user.id,
-      rating: rating,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'product_id,user_id' });
-    return result.error ? fail(result.error) : ok(true);
+  async function productRatingSummaries() {
+    var result = await sb.rpc('product_rating_summaries');
+    return result.error ? fail(result.error) : ok(result.data);
   }
   async function myFavoriteProducts() {
     var result = await sb.from('product_favorites').select('product_id').order('created_at', { ascending: false });
@@ -763,7 +742,7 @@
     productImageUrl: productImageUrl, listProductReviews: listProductReviews, getMyProductReview: getMyProductReview,
     submitProductReview: submitProductReview, adminListProductReviews: adminListProductReviews, adminReplyToReview: adminReplyToReview,
     watchProductReviews: watchProductReviews, watchProductReviewsAdmin: watchProductReviewsAdmin,
-    productRatings: productRatings, rateProduct: rateProduct,
+    productRatingSummaries: productRatingSummaries,
     myFavoriteProducts: myFavoriteProducts, setProductFavorite: setProductFavorite,
     PAYMENT_METHODS: PAYMENT_METHODS, ORDER_STATUSES: ORDER_STATUSES
   };

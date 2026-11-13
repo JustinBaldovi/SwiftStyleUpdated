@@ -73,22 +73,18 @@ function isFavoriteProduct(productId) {
 }
 function productRatingMarkup(product) {
   const summary = productRatingSummary(product.id);
-  const selected = summary.ownRating || Math.round(summary.average);
-  const stars = [1, 2, 3, 4, 5].map(function (value) {
-    return '<button type="button" class="rating-star' + (value <= selected ? ' selected' : '') +
-      '" data-rate-product="' + product.id + '" data-rating="' + value + '" aria-label="Rate ' +
-      escapeHtml(product.name) + ' ' + value + ' out of 5 stars" title="Rate ' + value + ' out of 5">' +
-      '&#9733;</button>';
-  }).join('');
-  const score = summary.count
-    ? '<strong>' + summary.average.toFixed(1) + '</strong> <span> (' + summary.count +
-      (summary.count === 1 ? ' rating' : ' ratings') + ')</span>'
-    : '<span>No ratings yet</span>';
-  return '<div class="rating-stars" role="group" aria-label="Rate ' + escapeHtml(product.name) +
-    ', average ' + (summary.count ? summary.average.toFixed(1) : 'not rated') + ' out of 5">' + stars +
-    '</div><div class="rating-summary">' + score +
-    (summary.ownRating ? '<span class="your-rating"> · You rated ' + summary.ownRating + '/5</span>' : '') +
-    '</div>';
+  const average = summary.count ? summary.average : 0;
+  const label = summary.count
+    ? average.toFixed(1) + ' out of 5 from ' + summary.count + (summary.count === 1 ? ' review' : ' reviews')
+    : 'No customer feedback yet';
+  return '<span class="rating-stars" role="img" aria-label="' + escapeHtml(product.name) + ': ' +
+    label + '"><span class="rating-stars-empty" aria-hidden="true">★★★★★</span>' +
+    '<span class="rating-stars-filled" aria-hidden="true" style="--rating-fill:' +
+    (average / 5 * 100) + '%">★★★★★</span></span><div class="rating-summary">' +
+    (summary.count
+      ? '<strong>' + average.toFixed(1) + '</strong> <span> (' + summary.count +
+        (summary.count === 1 ? ' review' : ' reviews') + ')</span>'
+      : '<span>No customer feedback yet</span>') + '</div>';
 }
 function favoriteButtonMarkup(product) {
   const favorite = isFavoriteProduct(product.id);
@@ -114,44 +110,41 @@ function showProductFeatureNotice(message) {
   }
   notice.textContent = message;
 }
+async function loadProductRatingSummaries() {
+  const result = await SSPH_DB.productRatingSummaries();
+  if (!result.ok) {
+    showProductFeatureNotice('Product feedback ratings could not load: ' + result.error);
+    return false;
+  }
+  SSPH_PRODUCT_RATING_SUMMARIES = Object.create(null);
+  result.data.forEach(function (row) {
+    SSPH_PRODUCT_RATING_SUMMARIES[Number(row.product_id)] = {
+      average: Number(row.average_rating),
+      count: Number(row.rating_count)
+    };
+  });
+  document.querySelectorAll('[data-product-rating]').forEach(function (container) {
+    const product = getProductById(container.dataset.productRating);
+    if (product) container.innerHTML = productRatingMarkup(product);
+  });
+  document.dispatchEvent(new CustomEvent('ssph:ratings-changed'));
+  return true;
+}
 async function loadProductFeatures() {
   const results = await Promise.all([
-    SSPH_DB.productRatings(),
+    loadProductRatingSummaries(),
     SSPH_DB.myFavoriteProducts()
   ]);
   const errors = [];
-  if (results[0].ok) {
-    const groups = Object.create(null);
-    results[0].data.ratings.forEach(function (row) {
-      const id = Number(row.product_id);
-      if (!groups[id]) groups[id] = { sum: 0, count: 0, ownRating: 0 };
-      groups[id].sum += Number(row.rating);
-      groups[id].count += 1;
-      if (results[0].data.userId === row.user_id) groups[id].ownRating = Number(row.rating);
-    });
-    SSPH_PRODUCT_RATING_SUMMARIES = Object.create(null);
-    Object.keys(groups).forEach(function (id) {
-      SSPH_PRODUCT_RATING_SUMMARIES[id] = {
-        average: groups[id].sum / groups[id].count,
-        count: groups[id].count,
-        ownRating: groups[id].ownRating
-      };
-    });
-  } else {
-    errors.push('Ratings: ' + results[0].error);
-  }
+  if (!results[0]) errors.push('Product feedback ratings could not load.');
   if (results[1].ok) {
     SSPH_FAVORITE_PRODUCT_IDS = new Set(results[1].data.map(Number));
   } else {
     errors.push('Favorites: ' + results[1].error);
   }
   showProductFeatureNotice(errors.length
-    ? 'Ratings and favorites could not load. Check the product ratings/favorites migration. ' + errors.join(' ')
+    ? 'Product feedback ratings or favorites could not load. Check the product ratings/favorites migration. ' + errors.join(' ')
     : '');
-  document.querySelectorAll('[data-product-rating]').forEach(function (container) {
-    const product = getProductById(container.dataset.productRating);
-    if (product) container.innerHTML = productRatingMarkup(product);
-  });
   document.querySelectorAll('[data-favorite-product]').forEach(function (button) {
     updateFavoriteButton(button, Number(button.dataset.favoriteProduct), false);
   });
@@ -913,7 +906,6 @@ function productCardHTML(p) {
             escapeHtml(productColorHex(p, color)) + '"></span>';
         }).join('') + '</div>' : ''}
       <div class="product-rating" data-product-rating="${p.id}">${productRatingMarkup(p)}</div>
-      <p class="rating-action-status" data-rating-status="${p.id}" aria-live="polite"></p>
       ${Number(p.stock) > 0 ? '<small class="product-stock">' + Number(p.stock) + ' in stock</small>' : '<small class="product-stock out-of-stock">Out of stock</small>'}
       <div class="product-actions">
         <a href="product.html?id=${p.id}" class="btn btn-secondary btn-block">View Product</a>
@@ -984,29 +976,23 @@ document.addEventListener('click', async function (event) {
     return;
   }
 
-  const ratingButton = target.closest('[data-rate-product]');
-  if (!ratingButton) return;
-  event.preventDefault();
-  const productId = Number(ratingButton.dataset.rateProduct);
-  const buttons = document.querySelectorAll('[data-rate-product="' + productId + '"]');
-  buttons.forEach(function (button) { button.disabled = true; });
-  const result = await SSPH_DB.rateProduct(productId, Number(ratingButton.dataset.rating));
-  if (!result.ok) {
-    buttons.forEach(function (button) { button.disabled = false; });
-    showProductFeatureNotice('Your rating could not be saved: ' + result.error);
-    return;
-  }
-  const errors = await loadProductFeatures();
-  document.dispatchEvent(new CustomEvent('ssph:ratings-changed', { detail: { productId: productId } }));
-  document.querySelectorAll('[data-rating-status="' + productId + '"]').forEach(function (status) {
-    status.textContent = errors.length ? '' : 'Thanks for rating this product!';
-  });
 });
 
 /* Run header/footer on every page load */
 document.addEventListener('DOMContentLoaded', function () {
   renderHeader();
   renderFooter();
+  document.addEventListener('pointerdown', function (event) {
+    if (event.button !== 0 || !document.body) return;
+    const splash = document.createElement('span');
+    splash.className = 'click-splash';
+    splash.setAttribute('aria-hidden', 'true');
+    splash.style.left = event.clientX + 'px';
+    splash.style.top = event.clientY + 'px';
+    splash.innerHTML = '<i></i><i></i><i></i><i></i>';
+    document.body.appendChild(splash);
+    window.setTimeout(function () { splash.remove(); }, 750);
+  }, true);
   if (window.SSPH_DB) {
     var previousUser = getCurrentUser();
     SSPH_DB.getProfile().then(function (result) {

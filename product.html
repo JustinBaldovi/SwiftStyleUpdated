@@ -46,7 +46,6 @@
             <div class="price">${formatPrice(product.price)}</div>
             <div class="product-detail-feedback">
               <div class="product-rating" data-product-rating="${product.id}">${productRatingMarkup(product)}</div>
-              <p class="rating-action-status" data-rating-status="${product.id}" aria-live="polite"></p>
               ${favoriteButtonMarkup(product)}
             </div>
             <p class="desc">${escapeHtml(product.description)}</p>
@@ -89,7 +88,7 @@
           <div class="product-review-columns">
             <form id="review-form" class="review-form">
               <h3>Share your feedback</h3>
-              <label for="review-rating">Your rating</label>
+              <label for="review-rating">Rating for your feedback</label>
               <select id="review-rating" required>
                 <option value="5">5 stars — Excellent</option>
                 <option value="4">4 stars — Very good</option>
@@ -121,11 +120,10 @@
           return;
         }
         const reviews = result.data;
-        const average = reviews.length
-          ? (reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length).toFixed(1)
-          : '';
-        summary.textContent = reviews.length
-          ? average + ' out of 5 stars · ' + reviews.length + (reviews.length === 1 ? ' review' : ' reviews')
+        await loadProductRatingSummaries();
+        const rating = productRatingSummary(product.id);
+        summary.textContent = rating.count
+          ? rating.average.toFixed(1) + ' out of 5 stars · ' + rating.count + (rating.count === 1 ? ' review' : ' reviews')
           : 'No reviews yet. Be the first to share your feedback.';
         if (result.reviewerNamesAvailable === false) {
           summary.textContent += ' · Run supabase/11_customer_order_cancellation_review_names.sql to show reviewer names.';
