@@ -699,6 +699,51 @@
     return ok(channel);
   }
 
+  async function productRatings() {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    var result = await sb.from('product_ratings').select('product_id, user_id, rating');
+    return result.error ? fail(result.error) : ok({
+      ratings: result.data,
+      userId: session.data.session ? session.data.session.user.id : ''
+    });
+  }
+  async function rateProduct(productId, rating) {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Please sign in first.');
+    rating = Number(rating);
+    productId = Number(productId);
+    if (!Number.isSafeInteger(productId) || productId < 1) return fail('Invalid product.');
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) return fail('Choose a rating from 1 to 5 stars.');
+    var result = await sb.from('product_ratings').upsert({
+      product_id: productId,
+      user_id: session.data.session.user.id,
+      rating: rating,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'product_id,user_id' });
+    return result.error ? fail(result.error) : ok(true);
+  }
+  async function myFavoriteProducts() {
+    var result = await sb.from('product_favorites').select('product_id').order('created_at', { ascending: false });
+    return result.error ? fail(result.error) : ok(result.data.map(function (row) { return row.product_id; }));
+  }
+  async function setProductFavorite(productId, favorite) {
+    var session = await sb.auth.getSession();
+    if (session.error) return fail(session.error);
+    if (!session.data.session) return fail('Please sign in first.');
+    productId = Number(productId);
+    if (!Number.isSafeInteger(productId) || productId < 1) return fail('Invalid product.');
+    var userId = session.data.session.user.id;
+    var result = favorite
+      ? await sb.from('product_favorites').upsert({
+        product_id: productId,
+        user_id: userId
+      }, { onConflict: 'product_id,user_id', ignoreDuplicates: true })
+      : await sb.from('product_favorites').delete().eq('product_id', productId).eq('user_id', userId);
+    return result.error ? fail(result.error) : ok(true);
+  }
+
   window.SSPH_DB = {
     client: sb, authEmailFor: authEmailFor,
     signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, updateProfile: updateProfile, requireSession: requireSession,
@@ -718,6 +763,8 @@
     productImageUrl: productImageUrl, listProductReviews: listProductReviews, getMyProductReview: getMyProductReview,
     submitProductReview: submitProductReview, adminListProductReviews: adminListProductReviews, adminReplyToReview: adminReplyToReview,
     watchProductReviews: watchProductReviews, watchProductReviewsAdmin: watchProductReviewsAdmin,
+    productRatings: productRatings, rateProduct: rateProduct,
+    myFavoriteProducts: myFavoriteProducts, setProductFavorite: setProductFavorite,
     PAYMENT_METHODS: PAYMENT_METHODS, ORDER_STATUSES: ORDER_STATUSES
   };
 })();

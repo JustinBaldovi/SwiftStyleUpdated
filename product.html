@@ -44,6 +44,11 @@
             ${product.isNew ? '<span class="product-badge">NEW</span>' : ''}
             <h1>${escapeHtml(product.name)}</h1>
             <div class="price">${formatPrice(product.price)}</div>
+            <div class="product-detail-feedback">
+              <div class="product-rating" data-product-rating="${product.id}">${productRatingMarkup(product)}</div>
+              <p class="rating-action-status" data-rating-status="${product.id}" aria-live="polite"></p>
+              ${favoriteButtonMarkup(product)}
+            </div>
             <p class="desc">${escapeHtml(product.description)}</p>
   
             ${product.stock > 0 ? `

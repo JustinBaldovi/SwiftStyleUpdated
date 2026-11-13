@@ -5,7 +5,35 @@
   var list = document.getElementById('customer-orders-list');
   var notice = document.getElementById('orders-notice');
   var liveStatus = document.getElementById('orders-live-status');
+  var favoritesGrid = document.getElementById('favorites-grid');
+  var ordersTab = document.getElementById('orders-tab');
+  var favoritesTab = document.getElementById('favorites-tab');
+  var tabs = document.querySelector('.customer-orders-tabs');
+  var ordersPanel = document.getElementById('orders-panel');
+  var favoritesPanel = document.getElementById('favorites-panel');
   var refreshTimer;
+
+  function showPanel(tab) {
+    var showFavorites = tab === favoritesTab;
+    ordersTab.classList.toggle('active', !showFavorites);
+    favoritesTab.classList.toggle('active', showFavorites);
+    ordersTab.setAttribute('aria-selected', String(!showFavorites));
+    favoritesTab.setAttribute('aria-selected', String(showFavorites));
+    ordersTab.tabIndex = showFavorites ? -1 : 0;
+    favoritesTab.tabIndex = showFavorites ? 0 : -1;
+    ordersPanel.hidden = showFavorites;
+    favoritesPanel.hidden = !showFavorites;
+  }
+
+  function renderFavorites() {
+    var favorites = PRODUCTS.filter(function (product) { return isFavoriteProduct(product.id); });
+    if (!favorites.length) {
+      favoritesGrid.innerHTML = '<div class="customer-order-empty"><h2>No favorites yet</h2>' +
+        '<p>Tap the heart on a product to save it here.</p><a class="btn" href="shop.html">Browse the shop</a></div>';
+      return;
+    }
+    renderProductGrid('favorites-grid', favorites);
+  }
 
   function statusClass(status) {
     return 'status-' + String(status).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -84,6 +112,13 @@
 
   async function start() {
     if (!(await SSPH_DB.requireSession('login.html?redirect=orders.html'))) return;
+    var catalog = await SSPH_DB.loadCatalog();
+    if (!catalog.ok) {
+      showError('Could not load products for your favorites: ' + catalog.error);
+    } else {
+      await loadProductFeatures();
+      renderFavorites();
+    }
     await refreshOrders();
     var subscription = await SSPH_DB.watchOrders(false, scheduleRefresh, function (status, error) {
       if (status === 'SUBSCRIBED') {
@@ -105,6 +140,20 @@
       showError('Live order updates unavailable: ' + subscription.error);
     }
   }
+
+  ordersTab.addEventListener('click', function () { showPanel(ordersTab); });
+  favoritesTab.addEventListener('click', function () { showPanel(favoritesTab); });
+  tabs.addEventListener('keydown', function (event) {
+    var tab = event.target.closest('[role="tab"]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    var next = event.key === 'Home' ? ordersTab
+      : event.key === 'End' ? favoritesTab
+      : tab === ordersTab ? favoritesTab : ordersTab;
+    showPanel(next);
+    next.focus();
+  });
+  document.addEventListener('ssph:favorites-changed', renderFavorites);
 
   window.setInterval(function () {
     if (!document.hidden) refreshOrders();

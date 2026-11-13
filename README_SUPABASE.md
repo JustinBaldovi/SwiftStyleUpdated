@@ -40,7 +40,8 @@ I can't reach yours — step 5 below is your smoke test.
     It creates an order for only that product, checks and deducts stock atomically, and leaves the saved cart unchanged.
 16. Run `supabase/16_customer_help_center.sql` to enable customer messages, owner Help Center replies,
     customer response ratings, inbox notifications, and the post-rating delete rule.
-17. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+17. Run `supabase/17_product_ratings_favorites.sql` to enable product-card ratings and saved favorites.
+18. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
@@ -104,6 +105,9 @@ Also: if your rubric requires phpMyAdmin specifically, Supabase's Table Editor/S
   product; the list updates through Supabase Realtime with a periodic refresh fallback. The dashboard lists submitted feedback.
   Run `supabase/10_inventory_reviews.sql` before using inventory image uploads or customer reviews. If the API reports
   that `product_reviews` is missing from its schema cache, rerun the migration and reload the page.
+- Product cards show an average rating and rating count; customers can set or change a 1–5 star rating without replacing
+  their written review. Customers can favorite products from cards or product pages and find them in the Favorites tab
+  beside My Orders. Apply `supabase/17_product_ratings_favorites.sql` to enable these account features.
 - Product color swatches use the built-in default colors in `assets/js/app.js`; owners only enter color names.
   If you previously added a `color_hexes` column to Supabase, it is unused and can be left in place.
 - Admins can permanently delete orders from the owner dashboard after confirmation. Related order items are deleted too;

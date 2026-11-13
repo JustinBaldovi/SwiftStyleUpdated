@@ -24,7 +24,16 @@
     <span class="live-indicator" id="orders-live-status">Connecting to live updates…</span>
   </div>
   <p class="owner-notice" id="orders-notice" role="status" aria-live="polite"></p>
-  <section class="customer-orders-list" id="customer-orders-list" aria-live="polite"></section>
+  <div class="owner-tabs customer-orders-tabs" role="tablist" aria-label="Account items">
+    <button type="button" class="owner-tab active" id="orders-tab" role="tab" aria-selected="true" aria-controls="orders-panel">My Orders</button>
+    <button type="button" class="owner-tab" id="favorites-tab" role="tab" aria-selected="false" aria-controls="favorites-panel">Favorites</button>
+  </div>
+  <section class="customer-orders-panel" id="orders-panel" role="tabpanel" aria-labelledby="orders-tab">
+    <section class="customer-orders-list" id="customer-orders-list" aria-live="polite"></section>
+  </section>
+  <section class="customer-orders-panel" id="favorites-panel" role="tabpanel" aria-labelledby="favorites-tab" hidden>
+    <div class="product-grid" id="favorites-grid" aria-live="polite"></div>
+  </section>
 </main>
 
 <div id="site-footer"></div>

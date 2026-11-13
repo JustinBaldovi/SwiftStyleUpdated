@@ -27,6 +27,8 @@
         <option value="newest">Newest</option>
         <option value="price_asc">Price: Low to High</option>
         <option value="price_desc">Price: High to Low</option>
+        <option value="rating_desc">Highest Rated</option>
+        <option value="rating_asc">Lowest Rated</option>
         <option value="name">Name A-Z</option>
       </select>
     </form>
@@ -98,6 +100,7 @@
   
       document.getElementById('sort-select').addEventListener('change', applySort);
       window.addEventListener('ssph:catalog-updated', applySort);
+      document.addEventListener('ssph:ratings-changed', applySort);
       applySort();
     }
   });

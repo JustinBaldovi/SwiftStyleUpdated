@@ -25,6 +25,8 @@
         <option value="newest">Newest</option>
         <option value="price_asc">Price: Low to High</option>
         <option value="price_desc">Price: High to Low</option>
+        <option value="rating_desc">Highest Rated</option>
+        <option value="rating_asc">Lowest Rated</option>
         <option value="name">Name A-Z</option>
       </select>
     </div>
@@ -57,10 +59,7 @@
       const sort = document.getElementById('sort-select').value;
       let list = PRODUCTS.filter(p => p.name.toLowerCase().includes(search));
   
-      if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
-      else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
-      else if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
-      else list.sort((a, b) => b.id - a.id);
+      list = sortProducts(list, sort);
   
       renderProductGrid('shop-grid', list);
     }
@@ -68,6 +67,7 @@
     document.getElementById('search-input').addEventListener('input', applyFilters);
     document.getElementById('sort-select').addEventListener('change', applyFilters);
     window.addEventListener('ssph:catalog-updated', applyFilters);
+    document.addEventListener('ssph:ratings-changed', applyFilters);
     applyFilters();
   });
 </script>
