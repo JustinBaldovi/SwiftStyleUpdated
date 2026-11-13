@@ -423,36 +423,59 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   content: "";
   position: absolute;
   z-index: -1;
-  inset: -5px;
-  padding: 5px;
-  border-radius: 17px;
-  background: conic-gradient(from 0deg,
-    transparent 0deg 24deg,
-    rgba(255,183,77,.18) 48deg,
-    rgba(255,140,26,.8) 82deg,
-    #ffad42 112deg,
-    rgba(255,197,105,.26) 150deg,
-    transparent 184deg 226deg,
-    rgba(255,157,49,.72) 274deg,
-    rgba(255,205,130,.26) 316deg,
-    transparent 360deg);
-  filter: blur(7px);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
+  width: 58px;
+  height: 11px;
+  border-radius: 55% 45% 60% 40%;
+  offset-path: inset(-7px round 18px);
+  offset-anchor: center;
+  offset-rotate: auto;
+  offset-distance: 0%;
+  background:
+    radial-gradient(ellipse at 18% 55%, rgba(255,225,164,.95), transparent 38%),
+    radial-gradient(ellipse at 52% 42%, #ffad42 0 34%, rgba(255,132,20,.75) 62%, transparent 78%),
+    radial-gradient(ellipse at 82% 55%, rgba(255,190,92,.88), transparent 42%);
+  filter: blur(3px) drop-shadow(0 0 5px rgba(255,139,25,.75));
   opacity: 0;
   pointer-events: none;
   transition: opacity .25s ease;
 }
-.product-card:hover::before, .product-card:focus-within::before {
-  opacity: .9;
-  animation: product-liquid-glow 4.5s linear infinite, product-liquid-hue 3s ease-in-out infinite alternate;
+.product-card::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 23px;
+  height: 8px;
+  border-radius: 42% 58% 48% 52%;
+  offset-path: inset(-7px round 18px);
+  offset-anchor: center;
+  offset-rotate: auto;
+  offset-distance: 34%;
+  background: radial-gradient(ellipse, rgba(255,213,137,.95), rgba(255,139,25,.72) 54%, transparent 76%);
+  filter: blur(3px) drop-shadow(0 0 4px rgba(255,149,35,.65));
+  opacity: 0;
+  pointer-events: none;
 }
-@keyframes product-liquid-glow { to { transform: rotate(360deg); } }
-@keyframes product-liquid-hue {
-  from { filter: blur(7px) hue-rotate(-8deg) saturate(.9); }
-  to { filter: blur(10px) hue-rotate(16deg) saturate(1.2); }
+.product-card:hover::before, .product-card:focus-within::before,
+.product-card:hover::after, .product-card:focus-within::after {
+  opacity: .95;
+}
+.product-card:hover::before, .product-card:focus-within::before {
+  animation: product-slime-travel 4s linear infinite, product-slime-pulse 1.7s ease-in-out infinite alternate;
+}
+.product-card:hover::after, .product-card:focus-within::after {
+  animation: product-slime-travel 4s linear infinite, product-slime-drop 1.7s ease-in-out infinite alternate;
+}
+@keyframes product-slime-travel {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+@keyframes product-slime-pulse {
+  from { filter: blur(3px) drop-shadow(0 0 4px rgba(255,139,25,.65)) saturate(.9); }
+  to { filter: blur(4px) drop-shadow(0 0 8px rgba(255,176,64,.9)) saturate(1.25); }
+}
+@keyframes product-slime-drop {
+  from { filter: blur(3px) drop-shadow(0 0 3px rgba(255,149,35,.55)); }
+  to { filter: blur(4px) drop-shadow(0 0 7px rgba(255,191,91,.85)); }
 }
 .product-thumb {
   aspect-ratio: 1 / 1;
@@ -534,6 +557,7 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
 @media (prefers-reduced-motion: reduce) {
   .favorite-pop .favorite-heart, .favorite-pop::before, .favorite-pop::after,
   .product-card:hover::before, .product-card:focus-within::before,
+  .product-card:hover::after, .product-card:focus-within::after,
   .click-splash, .click-splash i { animation: none; }
 }
 .click-splash {
