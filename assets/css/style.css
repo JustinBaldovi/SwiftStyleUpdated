@@ -423,18 +423,19 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   content: "";
   position: absolute;
   z-index: -1;
-  width: 220px;
-  height: 16px;
-  border-radius: 55% 45% 60% 40%;
-  offset-path: inset(-7px round 32px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  offset-path: inset(-7px round 19px);
   offset-anchor: center;
   offset-rotate: auto;
-  offset-distance: 0%;
-  background:
-    radial-gradient(ellipse at 18% 55%, rgba(255,225,164,.95), transparent 38%),
-    radial-gradient(ellipse at 52% 42%, #ffad42 0 34%, rgba(255,132,20,.75) 62%, transparent 78%),
-    radial-gradient(ellipse at 82% 55%, rgba(255,190,92,.88), transparent 42%);
-  filter: blur(3px) drop-shadow(0 0 5px rgba(255,139,25,.75));
+  offset-distance: 6%;
+  background: radial-gradient(circle, #fff5d6 0 18%, #ffb13b 38%, rgba(255,139,25,.65) 58%, transparent 75%);
+  box-shadow:
+    10px -8px 0 -2px rgba(255,235,192,.95),
+    18px 4px 0 -1px rgba(255,170,54,.9),
+    -7px 11px 0 -2px rgba(255,196,105,.9);
+  filter: drop-shadow(0 0 4px rgba(255,153,34,.9));
   opacity: 0;
   pointer-events: none;
   transition: opacity .25s ease;
@@ -443,15 +444,19 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   content: "";
   position: absolute;
   z-index: -1;
-  width: 130px;
-  height: 12px;
-  border-radius: 42% 58% 48% 52%;
-  offset-path: inset(-7px round 32px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  offset-path: inset(-7px round 19px);
   offset-anchor: center;
   offset-rotate: auto;
-  offset-distance: 34%;
-  background: radial-gradient(ellipse, rgba(255,213,137,.95), rgba(255,139,25,.72) 54%, transparent 76%);
-  filter: blur(3px) drop-shadow(0 0 4px rgba(255,149,35,.65));
+  offset-distance: 53%;
+  background: radial-gradient(circle, #fff8df 0 20%, #ffc15c 42%, rgba(255,139,25,.65) 65%, transparent 78%);
+  box-shadow:
+    -9px -7px 0 -1px rgba(255,186,73,.9),
+    8px -10px 0 -2px rgba(255,238,195,.95),
+    12px 8px 0 -1px rgba(255,162,43,.85);
+  filter: drop-shadow(0 0 4px rgba(255,166,50,.85));
   opacity: 0;
   pointer-events: none;
 }
@@ -460,22 +465,18 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   opacity: .95;
 }
 .product-card:hover::before, .product-card:focus-within::before {
-  animation: product-slime-travel 6s linear infinite, product-slime-pulse 1.7s ease-in-out infinite alternate;
+  animation: product-slime-travel 8s linear infinite, product-firefly-twinkle 1.5s ease-in-out infinite alternate;
 }
 .product-card:hover::after, .product-card:focus-within::after {
-  animation: product-slime-travel 6s linear infinite, product-slime-drop 1.7s ease-in-out infinite alternate;
+  animation: product-slime-travel 9s linear infinite, product-firefly-twinkle 1.9s ease-in-out infinite alternate-reverse;
 }
 @keyframes product-slime-travel {
   from { offset-distance: 0%; }
   to { offset-distance: 100%; }
 }
-@keyframes product-slime-pulse {
-  from { filter: blur(3px) drop-shadow(0 0 4px rgba(255,139,25,.65)) saturate(.9); }
-  to { filter: blur(4px) drop-shadow(0 0 8px rgba(255,176,64,.9)) saturate(1.25); }
-}
-@keyframes product-slime-drop {
-  from { filter: blur(3px) drop-shadow(0 0 3px rgba(255,149,35,.55)); }
-  to { filter: blur(4px) drop-shadow(0 0 7px rgba(255,191,91,.85)); }
+@keyframes product-firefly-twinkle {
+  from { opacity: .45; filter: drop-shadow(0 0 2px rgba(255,153,34,.65)); }
+  to { opacity: 1; filter: drop-shadow(0 0 7px rgba(255,190,86,1)); }
 }
 .product-thumb {
   aspect-ratio: 1 / 1;
