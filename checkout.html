@@ -53,6 +53,8 @@
     }
 
     const user = getCurrentUser() || {};
+    const savedAddressResult = await SSPH_DB.mySavedAddresses();
+    let savedAddresses = savedAddressResult.ok ? savedAddressResult.data : [];
     const total = cart.reduce((sum, i) => sum + getProductById(i.productId).price * i.qty, 0);
 
     const summaryLines = cart.map(item => {
@@ -78,6 +80,31 @@
               <div class="form-group">
                 <label for="phone">Phone Number</label>
                 <input type="text" id="phone" value="${escapeHtml(user.phone || '')}" placeholder="09XXXXXXXXX" required>
+              </div>
+              <div class="saved-address-book">
+                <h3 class="delivery-address-heading">Saved addresses</h3>
+                <p class="form-note" style="text-align:left; margin:0 0 10px;">Save up to five addresses and choose one to fill in checkout.</p>
+                <div class="saved-address-controls">
+                  <div class="form-group" style="margin:0;">
+                    <label for="saved_address_select">Choose an address</label>
+                    <select id="saved_address_select">
+                      <option value="">Enter an address manually</option>
+                      ${savedAddresses.map(function (savedAddress) {
+                        return '<option value="' + Number(savedAddress.address_id) + '">' +
+                          escapeHtml(savedAddress.label) + ' — ' + escapeHtml(savedAddress.city) + '</option>';
+                      }).join('')}
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin:0;">
+                    <label for="saved_address_label">Address label</label>
+                    <input type="text" id="saved_address_label" maxlength="40" placeholder="Home, Work, etc.">
+                  </div>
+                </div>
+                <div class="saved-address-actions">
+                  <button type="button" class="btn btn-secondary" id="save-address-btn">Save address</button>
+                  <button type="button" class="btn btn-secondary" id="delete-address-btn" disabled>Delete selected</button>
+                </div>
+                <p id="saved-address-status" class="saved-address-status" role="status" aria-live="polite">${savedAddressResult.ok ? '' : escapeHtml(savedAddressResult.error)}</p>
               </div>
               <div class="form-group">
                 <h3 class="delivery-address-heading">Delivery address</h3>
@@ -131,6 +158,96 @@
           </div>
         </div>
       </form>`;
+
+    const savedAddressSelect = document.getElementById('saved_address_select');
+    const savedAddressLabel = document.getElementById('saved_address_label');
+    const savedAddressStatus = document.getElementById('saved-address-status');
+    const deleteAddressButton = document.getElementById('delete-address-btn');
+    const savedAddressFields = {
+      address: document.getElementById('address'),
+      city: document.getElementById('city'),
+      province: document.getElementById('province'),
+      postal_code: document.getElementById('postal_code'),
+      delivery_note: document.getElementById('delivery_note')
+    };
+    function renderSavedAddressOptions(selectedAddressId) {
+      savedAddressSelect.innerHTML = '<option value="">Enter an address manually</option>' +
+        savedAddresses.map(function (savedAddress) {
+          return '<option value="' + Number(savedAddress.address_id) + '">' +
+            escapeHtml(savedAddress.label) + ' — ' + escapeHtml(savedAddress.city) + '</option>';
+        }).join('');
+      savedAddressSelect.value = selectedAddressId ? String(selectedAddressId) : '';
+      deleteAddressButton.disabled = !savedAddressSelect.value;
+    }
+    savedAddressSelect.addEventListener('change', function () {
+      const savedAddress = savedAddresses.find(function (item) {
+        return String(item.address_id) === savedAddressSelect.value;
+      });
+      deleteAddressButton.disabled = !savedAddress;
+      if (!savedAddress) return;
+      savedAddressFields.address.value = savedAddress.address;
+      savedAddressFields.city.value = savedAddress.city;
+      savedAddressFields.province.value = savedAddress.province;
+      savedAddressFields.postal_code.value = savedAddress.postal_code;
+      savedAddressFields.delivery_note.value = savedAddress.delivery_note || '';
+      savedAddressLabel.value = savedAddress.label;
+      savedAddressStatus.textContent = 'Address filled in. You can edit it before placing your order.';
+    });
+    document.getElementById('save-address-btn').addEventListener('click', async function () {
+      const button = this;
+      const addressData = {
+        label: savedAddressLabel.value.trim(),
+        address: savedAddressFields.address.value.trim(),
+        city: savedAddressFields.city.value.trim(),
+        province: savedAddressFields.province.value.trim(),
+        postalCode: savedAddressFields.postal_code.value.trim(),
+        deliveryNote: savedAddressFields.delivery_note.value.trim()
+      };
+      if (!addressData.label) {
+        savedAddressStatus.textContent = 'Enter a label such as Home or Work before saving.';
+        savedAddressLabel.focus();
+        return;
+      }
+      if (!addressData.address || !addressData.city || !addressData.province || !/^[0-9]{4}$/.test(addressData.postalCode)) {
+        savedAddressStatus.textContent = 'Complete the address fields and enter a 4-digit postal code before saving.';
+        return;
+      }
+      button.disabled = true;
+      savedAddressStatus.textContent = 'Saving address…';
+      const selectedAddressId = savedAddressSelect.value;
+      const result = await SSPH_DB.saveMyAddress(selectedAddressId, addressData);
+      button.disabled = false;
+      if (!result.ok) {
+        savedAddressStatus.textContent = result.error;
+        return;
+      }
+      const refreshedAddresses = await SSPH_DB.mySavedAddresses();
+      if (!refreshedAddresses.ok) {
+        savedAddressStatus.textContent = refreshedAddresses.error;
+        return;
+      }
+      savedAddresses = refreshedAddresses.data;
+      renderSavedAddressOptions(result.data);
+      savedAddressStatus.textContent = 'Address saved. Choose it from the list to fill checkout next time.';
+    });
+    deleteAddressButton.addEventListener('click', async function () {
+      const selectedAddressId = savedAddressSelect.value;
+      if (!selectedAddressId || !window.confirm('Delete this saved address?')) return;
+      deleteAddressButton.disabled = true;
+      savedAddressStatus.textContent = 'Deleting address…';
+      const result = await SSPH_DB.deleteMyAddress(selectedAddressId);
+      if (!result.ok) {
+        savedAddressStatus.textContent = result.error;
+        deleteAddressButton.disabled = false;
+        return;
+      }
+      savedAddresses = savedAddresses.filter(function (item) {
+        return String(item.address_id) !== selectedAddressId;
+      });
+      renderSavedAddressOptions('');
+      savedAddressLabel.value = '';
+      savedAddressStatus.textContent = 'Saved address deleted.';
+    });
 
     document.getElementById('checkout-form').addEventListener('submit', async function (e) {
       e.preventDefault();

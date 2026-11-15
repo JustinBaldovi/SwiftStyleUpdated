@@ -252,8 +252,8 @@ function getCurrentUser() {
 }
 
 /* ----- Email ----- */
-async function registerUser(fullName, email, phone, address, password) {
-  return SSPH_DB.signUp('email', email, password, { fullName: fullName, phone: phone, address: address });
+async function registerUser(fullName, email, phone, password) {
+  return SSPH_DB.signUp('email', email, password, { fullName: fullName, phone: phone });
 }
 async function loginUser(email, password) {
   return SSPH_DB.signIn('email', email, password);

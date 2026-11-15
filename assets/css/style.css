@@ -703,6 +703,11 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
 
 /* ---------------- Checkout ---------------- */
 .checkout-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: start; }
+.saved-address-book { margin: 0 0 18px; padding: 14px; border: 1px solid var(--border); border-radius: 9px; background: #fffaf3; }
+.saved-address-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.saved-address-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.saved-address-actions .btn { width: auto; }
+.saved-address-status { margin: 8px 0 0; min-height: 1.2em; color: var(--gray); font-size: .85rem; }
 .payment-options label {
   display: flex;
   align-items: center;
@@ -812,6 +817,7 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
 }
 @media (max-width: 520px) {
   .delivery-address-grid { grid-template-columns: 1fr; gap: 0; }
+  .saved-address-controls { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
   #product-section { padding-top: 18px; }

@@ -100,8 +100,7 @@
         provider: provider,
         provider_id: n.id,
         full_name: extra.fullName || (provider === 'instagram' ? n.id : n.id.split('@')[0]),
-        phone: extra.phone || '',
-        address: extra.address || ''
+        phone: extra.phone || ''
       } }
     });
     if (res.error) {
@@ -315,6 +314,47 @@
       return fail('Direct checkout is not enabled in the database yet. Run supabase/15_direct_product_checkout.sql in the Supabase SQL Editor.');
     }
     return r.error ? fail(r.error) : ok(r.data);
+  }
+  async function mySavedAddresses() {
+    var r = await sb.from('saved_addresses')
+      .select('address_id, label, address, city, province, postal_code, delivery_note, created_at')
+      .order('created_at', { ascending: true });
+    if (r.error) {
+      if (/saved_addresses|schema cache|does not exist/i.test(r.error.message || '')) {
+        return fail('Saved addresses are not enabled yet. Run supabase/19_saved_checkout_addresses.sql in the Supabase SQL Editor.');
+      }
+      return fail(r.error);
+    }
+    return ok(r.data);
+  }
+  async function saveMyAddress(addressId, address) {
+    address = address || {};
+    var r = await sb.rpc('save_my_address', {
+      p_address_id: addressId || null,
+      p_label: String(address.label || '').trim(),
+      p_address: String(address.address || '').trim(),
+      p_city: String(address.city || '').trim(),
+      p_province: String(address.province || '').trim(),
+      p_postal_code: String(address.postalCode || '').trim(),
+      p_delivery_note: String(address.deliveryNote || '').trim()
+    });
+    if (r.error) {
+      if (/save_my_address|schema cache|does not exist/i.test(r.error.message || '')) {
+        return fail('Saved addresses are not enabled yet. Run supabase/19_saved_checkout_addresses.sql in the Supabase SQL Editor.');
+      }
+      return fail(r.error);
+    }
+    return ok(r.data);
+  }
+  async function deleteMyAddress(addressId) {
+    var r = await sb.rpc('delete_my_saved_address', { p_address_id: Number(addressId) });
+    if (r.error) {
+      if (/delete_my_saved_address|schema cache|does not exist/i.test(r.error.message || '')) {
+        return fail('Saved addresses are not enabled yet. Run supabase/19_saved_checkout_addresses.sql in the Supabase SQL Editor.');
+      }
+      return fail(r.error);
+    }
+    return ok(r.data);
   }
   async function myOrders() {
     var r = await sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
@@ -728,7 +768,9 @@
     signUp: signUp, signIn: signIn, signOut: signOut, getProfile: getProfile, updateProfile: updateProfile, requireSession: requireSession,
     loadCatalog: loadCatalog, watchCatalog: watchCatalog,
     cartList: cartList, cartCount: cartCount, cartAdd: cartAdd, cartUpdate: cartUpdate, cartRemove: cartRemove,
-    placeOrder: placeOrder, placeDirectOrder: placeDirectOrder, myOrders: myOrders, cancelMyOrder: cancelMyOrder, getOrder: getOrder, watchOrders: watchOrders,
+    placeOrder: placeOrder, placeDirectOrder: placeDirectOrder,
+    mySavedAddresses: mySavedAddresses, saveMyAddress: saveMyAddress, deleteMyAddress: deleteMyAddress,
+    myOrders: myOrders, cancelMyOrder: cancelMyOrder, getOrder: getOrder, watchOrders: watchOrders,
     sendSupportMessage: sendSupportMessage, mySupportMessages: mySupportMessages,
     markSupportReplySeen: markSupportReplySeen, rateSupportReply: rateSupportReply,
     deleteMySupportMessage: deleteMySupportMessage, adminListSupportMessages: adminListSupportMessages,

@@ -43,7 +43,9 @@ I can't reach yours — step 5 below is your smoke test.
 17. Run `supabase/17_product_ratings_favorites.sql` to enable product-card ratings and saved favorites.
 18. Run `supabase/18_product_feedback_ratings.sql` so product stars are calculated from customer reviews
     and admin accounts cannot submit product reviews.
-19. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
+19. Run `supabase/19_saved_checkout_addresses.sql` to let each signed-in customer save, select, update,
+    and delete up to five reusable checkout addresses.
+20. **Project Settings → API** → copy *Project URL* and *anon public* key into `assets/js/supabase-config.js`.
 
 ## 2. Static site connection (already wired in this zip)
 
