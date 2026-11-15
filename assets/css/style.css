@@ -423,10 +423,10 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   content: "";
   position: absolute;
   z-index: -1;
-  width: 150px;
-  height: 14px;
+  width: 220px;
+  height: 16px;
   border-radius: 55% 45% 60% 40%;
-  offset-path: inset(-7px round 18px);
+  offset-path: inset(-7px round 32px);
   offset-anchor: center;
   offset-rotate: auto;
   offset-distance: 0%;
@@ -443,10 +443,10 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   content: "";
   position: absolute;
   z-index: -1;
-  width: 90px;
-  height: 10px;
+  width: 130px;
+  height: 12px;
   border-radius: 42% 58% 48% 52%;
-  offset-path: inset(-7px round 18px);
+  offset-path: inset(-7px round 32px);
   offset-anchor: center;
   offset-rotate: auto;
   offset-distance: 34%;
@@ -460,10 +460,10 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   opacity: .95;
 }
 .product-card:hover::before, .product-card:focus-within::before {
-  animation: product-slime-travel 4s linear infinite, product-slime-pulse 1.7s ease-in-out infinite alternate;
+  animation: product-slime-travel 6s linear infinite, product-slime-pulse 1.7s ease-in-out infinite alternate;
 }
 .product-card:hover::after, .product-card:focus-within::after {
-  animation: product-slime-travel 4s linear infinite, product-slime-drop 1.7s ease-in-out infinite alternate;
+  animation: product-slime-travel 6s linear infinite, product-slime-drop 1.7s ease-in-out infinite alternate;
 }
 @keyframes product-slime-travel {
   from { offset-distance: 0%; }
