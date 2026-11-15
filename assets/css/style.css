@@ -423,19 +423,24 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   content: "";
   position: absolute;
   z-index: -1;
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   offset-path: inset(-7px round 19px);
   offset-anchor: center;
   offset-rotate: auto;
   offset-distance: 6%;
-  background: radial-gradient(circle, #fff5d6 0 18%, #ffb13b 38%, rgba(255,139,25,.65) 58%, transparent 75%);
+  background: radial-gradient(circle, #fffdf0 0 20%, #ffd16b 38%, #ff941e 62%, transparent 78%);
   box-shadow:
-    10px -8px 0 -2px rgba(255,235,192,.95),
-    18px 4px 0 -1px rgba(255,170,54,.9),
-    -7px 11px 0 -2px rgba(255,196,105,.9);
-  filter: drop-shadow(0 0 4px rgba(255,153,34,.9));
+    10px -8px 0 0 rgba(255,241,199,.98),
+    19px 4px 0 -1px rgba(255,177,57,.98),
+    -8px 11px 0 0 rgba(255,202,112,.98),
+    -19px -5px 0 -1px rgba(255,156,38,.96),
+    4px 16px 0 -2px rgba(255,231,173,.98),
+    26px -9px 0 -2px rgba(255,192,83,.96),
+    -13px -15px 0 -2px rgba(255,221,146,.98),
+    30px 12px 0 -2px rgba(255,146,27,.95);
+  filter: drop-shadow(0 0 7px rgba(255,145,20,.98));
   opacity: 0;
   pointer-events: none;
   transition: opacity .25s ease;
@@ -444,19 +449,24 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   content: "";
   position: absolute;
   z-index: -1;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   offset-path: inset(-7px round 19px);
   offset-anchor: center;
   offset-rotate: auto;
   offset-distance: 53%;
-  background: radial-gradient(circle, #fff8df 0 20%, #ffc15c 42%, rgba(255,139,25,.65) 65%, transparent 78%);
+  background: radial-gradient(circle, #fffdf0 0 20%, #ffd47a 40%, #ff9a2c 64%, transparent 80%);
   box-shadow:
-    -9px -7px 0 -1px rgba(255,186,73,.9),
-    8px -10px 0 -2px rgba(255,238,195,.95),
-    12px 8px 0 -1px rgba(255,162,43,.85);
-  filter: drop-shadow(0 0 4px rgba(255,166,50,.85));
+    -10px -7px 0 0 rgba(255,193,78,.98),
+    9px -11px 0 -1px rgba(255,245,210,.98),
+    14px 8px 0 0 rgba(255,167,47,.98),
+    -18px 3px 0 -1px rgba(255,221,145,.98),
+    5px 16px 0 -2px rgba(255,146,25,.96),
+    23px -6px 0 -2px rgba(255,208,113,.98),
+    -7px -17px 0 -2px rgba(255,177,54,.96),
+    -25px 12px 0 -2px rgba(255,233,180,.98);
+  filter: drop-shadow(0 0 7px rgba(255,155,33,.98));
   opacity: 0;
   pointer-events: none;
 }
@@ -475,8 +485,8 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   to { offset-distance: 100%; }
 }
 @keyframes product-firefly-twinkle {
-  from { opacity: .45; filter: drop-shadow(0 0 2px rgba(255,153,34,.65)); }
-  to { opacity: 1; filter: drop-shadow(0 0 7px rgba(255,190,86,1)); }
+  from { opacity: .7; filter: drop-shadow(0 0 4px rgba(255,153,34,.85)); }
+  to { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,190,86,1)); }
 }
 .product-thumb {
   aspect-ratio: 1 / 1;
