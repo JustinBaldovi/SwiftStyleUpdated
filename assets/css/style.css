@@ -419,74 +419,34 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
   box-shadow: 0 8px 22px rgba(118,59,19,.1);
 }
 .product-card:focus-within { border-color: var(--orange); }
-.product-card::before {
-  content: "";
+.product-particles {
   position: absolute;
-  z-index: -1;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  offset-path: inset(-7px round 19px);
-  offset-anchor: center;
-  offset-rotate: auto;
-  offset-distance: 6%;
-  background: radial-gradient(circle, #fffdf0 0 20%, #ffd16b 38%, #ff941e 62%, transparent 78%);
-  box-shadow:
-    10px -8px 0 0 rgba(255,241,199,.98),
-    19px 4px 0 -1px rgba(255,177,57,.98),
-    -8px 11px 0 0 rgba(255,202,112,.98),
-    -19px -5px 0 -1px rgba(255,156,38,.96),
-    4px 16px 0 -2px rgba(255,231,173,.98),
-    26px -9px 0 -2px rgba(255,192,83,.96),
-    -13px -15px 0 -2px rgba(255,221,146,.98),
-    30px 12px 0 -2px rgba(255,146,27,.95);
-  filter: drop-shadow(0 0 7px rgba(255,145,20,.98));
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s ease;
-}
-.product-card::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  offset-path: inset(-7px round 19px);
-  offset-anchor: center;
-  offset-rotate: auto;
-  offset-distance: 53%;
-  background: radial-gradient(circle, #fffdf0 0 20%, #ffd47a 40%, #ff9a2c 64%, transparent 80%);
-  box-shadow:
-    -10px -7px 0 0 rgba(255,193,78,.98),
-    9px -11px 0 -1px rgba(255,245,210,.98),
-    14px 8px 0 0 rgba(255,167,47,.98),
-    -18px 3px 0 -1px rgba(255,221,145,.98),
-    5px 16px 0 -2px rgba(255,146,25,.96),
-    23px -6px 0 -2px rgba(255,208,113,.98),
-    -7px -17px 0 -2px rgba(255,177,54,.96),
-    -25px 12px 0 -2px rgba(255,233,180,.98);
-  filter: drop-shadow(0 0 7px rgba(255,155,33,.98));
-  opacity: 0;
+  z-index: 1;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
   pointer-events: none;
 }
-.product-card:hover::before, .product-card:focus-within::before,
-.product-card:hover::after, .product-card:focus-within::after {
-  opacity: .95;
+.product-particle {
+  position: absolute;
+  top: var(--particle-y);
+  left: var(--particle-x);
+  width: var(--particle-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff8df 0 18%, #ffc15c 42%, #ff941e 68%, transparent 100%);
+  box-shadow: 0 0 5px 1px rgba(255,157,42,.5);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.65);
+  pointer-events: none;
 }
-.product-card:hover::before, .product-card:focus-within::before {
-  animation: product-slime-travel 8s linear infinite, product-firefly-twinkle 1.5s ease-in-out infinite alternate;
-}
-.product-card:hover::after, .product-card:focus-within::after {
-  animation: product-slime-travel 9s linear infinite, product-firefly-twinkle 1.9s ease-in-out infinite alternate-reverse;
-}
-@keyframes product-slime-travel {
-  from { offset-distance: 0%; }
-  to { offset-distance: 100%; }
+.product-card:hover .product-particle, .product-card:focus-within .product-particle {
+  animation: product-firefly-twinkle var(--particle-duration) ease-in-out var(--particle-delay) infinite both;
 }
 @keyframes product-firefly-twinkle {
-  from { opacity: .7; filter: drop-shadow(0 0 4px rgba(255,153,34,.85)); }
-  to { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,190,86,1)); }
+  0%, 100% { opacity: .12; transform: translate(-50%, -50%) scale(.65); }
+  45% { opacity: .82; transform: translate(-50%, -50%) scale(1.15); }
+  68% { opacity: .28; transform: translate(-50%, -50%) scale(.8); }
 }
 .product-thumb {
   aspect-ratio: 1 / 1;
@@ -567,8 +527,7 @@ body.ssph-music-shell > :not(audio):not(.ssph-music-frame) { display: none !impo
 }
 @media (prefers-reduced-motion: reduce) {
   .favorite-pop .favorite-heart, .favorite-pop::before, .favorite-pop::after,
-  .product-card:hover::before, .product-card:focus-within::before,
-  .product-card:hover::after, .product-card:focus-within::after,
+  .product-card:hover .product-particle, .product-card:focus-within .product-particle,
   .click-splash, .click-splash i { animation: none; }
 }
 .click-splash {

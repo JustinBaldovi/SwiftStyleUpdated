@@ -888,9 +888,25 @@ function renderFooter() {
 }
 
 /* ---------------- Product card / grid rendering ---------------- */
+function productParticlesMarkup() {
+  const particles = [
+    [12, 2, 4, 2.3, -.4], [31, 1, 5, 3.1, -1.8], [53, 2, 3, 2.7, -1.1], [72, 1, 5, 3.6, -2.4],
+    [98, 18, 4, 2.8, -1.5], [99, 38, 5, 3.4, -.7], [98, 59, 3, 2.1, -1.9], [99, 81, 5, 3.7, -2.8],
+    [86, 98, 4, 2.6, -.9], [66, 99, 5, 3.3, -2.1], [45, 98, 3, 2.4, -1.3], [24, 99, 5, 3.8, -3],
+    [2, 84, 4, 2.9, -1.7], [1, 63, 5, 3.5, -.5], [2, 42, 3, 2.2, -2.5], [1, 21, 5, 3.2, -1],
+    [19, 3, 3, 3.7, -2.2], [94, 70, 3, 2.5, -1.4], [77, 97, 3, 2, -.8], [2, 9, 3, 3, -2.7]
+  ];
+  return '<span class="product-particles" aria-hidden="true">' +
+    particles.map(function (particle) {
+      return '<span class="product-particle" style="--particle-x:' + particle[0] +
+        '%;--particle-y:' + particle[1] + '%;--particle-size:' + particle[2] +
+        'px;--particle-duration:' + particle[3] + 's;--particle-delay:' + particle[4] + 's"></span>';
+    }).join('') + '</span>';
+}
 function productCardHTML(p) {
   return `
   <div class="product-card">
+    ${productParticlesMarkup()}
     ${favoriteButtonMarkup(p)}
     <a href="product.html?id=${p.id}">
       <div class="product-thumb"><img src="${escapeHtml(productImage(p))}" data-fallback-src="${escapeHtml(productBaseImage(p))}"${productImgClass(p)} alt="${escapeHtml(p.name)}"></div>
